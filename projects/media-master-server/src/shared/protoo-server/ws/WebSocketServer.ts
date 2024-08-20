@@ -104,7 +104,7 @@ export default class WebSocketServer extends EnhancedEventEmitter {
           // Create a new Protoo WebSocket transport.
           const transport = new WebSocketTransport(connection);
 
-          console.info('WebSocketServer _onRequest() | accept() called ' + transport.toString());
+          // console.info('WebSocketServer _onRequest() | accept() called ' + transport.toString());
 
           // Return the transport.
           return transport;

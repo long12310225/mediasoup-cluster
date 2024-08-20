@@ -143,23 +143,27 @@ export class TransportService {
     peerId: string;
     userId?: string
   }): Promise<WebRtcTransportData> {
+    console.time(`用户${data.peerId} createConsumerTransport函数 this.peerService.getPeer耗时`)
     const peer = await this.peerService.getPeer({ 
       peerId: data.peerId
     })
+    console.timeEnd(`用户${data.peerId} createConsumerTransport函数 this.peerService.getPeer耗时`)
     if (!peer?.router?.id) {
-      console.error('TransportService createConsumerTransport 没有找到 peer')
+      console.error('TransportService createConsumerTransport函数 没有找到 peer')
       return
     }
 
+    console.time(`用户${data.peerId} createConsumerTransport函数 this.routerService.get耗时`)
     const router = await this.routerService.get({
       routerId: peer.router.id
     })
-  
+    console.timeEnd(`用户${data.peerId} createConsumerTransport函数 this.routerService.get耗时`)
     if (!router?.id) {
       console.error('this.roomService.getRoom() 没有找到router')
       return
     }
 
+    console.time(`用户${data.peerId} createConsumerTransport函数 fetchApi耗时`)
     // 发起 http 访问，访问 consumer 服务器（转发）
     const result = await fetchApi({
       host: router.worker.apiHost,
@@ -172,6 +176,7 @@ export class TransportService {
         peerId: data.peerId
       },
     });
+    console.timeEnd(`用户${data.peerId} createConsumerTransport函数 fetchApi耗时`)
 
     if(!result) return
 
@@ -191,7 +196,9 @@ export class TransportService {
       链式调用 getRepository 函数，并传入相关entiry实体类，
       链式调用 save 函数，将 mediaTransport 数据保存至数据库
     */
+    console.time(`用户${data.peerId} createConsumerTransport函数 MediaTransport.getRepository().save耗时`)
     await MediaTransport.getRepository().save(mediaTransport);
+    console.timeEnd(`用户${data.peerId} createConsumerTransport函数 MediaTransport.getRepository().save耗时`)
 
     // worker 根据对应的 wordId 给 transportCount +1
     MediaWorker.getRepository().increment({ id: router.workerId }, 'transportCount', 1);

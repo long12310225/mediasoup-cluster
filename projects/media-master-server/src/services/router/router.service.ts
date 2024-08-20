@@ -7,19 +7,21 @@ import { MediaRouter } from '@/dao/router/media.router.do';
 import { WorkerService } from '../worker/worker.service';
 import { RoomService } from '../room/room.service';
 import { EntityManager } from 'typeorm';
+import { RedisService, MEDIA_ROUTER } from '@/shared/redis';
 
 @Injectable()
 export class RouterService {
-  // 缓存 router
-  static mediarouters = new Map<string, any>();
+  private redis;
+  // static producerList = new Map<string, any>();
 
   constructor(
-    @InjectRepository(MediaRouter)
-    private readonly mediaRouter: MediaRouter,
     private readonly workerService: WorkerService,
     private readonly roomService: RoomService,
     private readonly entityManager: EntityManager,
-  ) {}
+    private readonly redisService: RedisService,
+  ) {
+    this.redis = this.redisService.getClient();
+  }
 
   /**
    * 获取或创建 media router
@@ -36,17 +38,8 @@ export class RouterService {
     if (result) return result;
       
     const res = await this.createForRoom(data);
-    console.log("%c Line:39 🍖 新建 router :", "color:#f5ce50", res);
+    // console.log("%c Line:39 🍖 新建 router :", "color:#f5ce50", res);
     return res
-  }
-
-  public getRouter(data: { roomId: string }) {
-    if (RouterService.mediarouters.has(data.roomId)) {
-      const router = RouterService.mediarouters.get(data.roomId)
-      console.log("%c Line:46 🍬 getRouter router", "color:#ea7e5c", router);
-      return router
-    }
-    return null;
   }
 
   /**
@@ -65,7 +58,7 @@ export class RouterService {
       .where('router.room_id = :roomId', { roomId: data.roomId })
       .andWhere('worker.transportCount < worker.maxTransport')
       .getOne();
-    console.log("%c Line:63 🎂 查询 router：", "color:#fca650", router);
+    // console.log("%c Line:63 🎂 查询 router：", "color:#fca650", router);
     
     // 如果有router
     if (router) {
@@ -121,6 +114,11 @@ export class RouterService {
       mediaRouter.id = result.routerId;
       mediaRouter.workerId = worker.id;
       mediaRouter.roomId = data.roomId;
+
+      RoomService.routerList.set(mediaRouter.id, {
+        ...mediaRouter,
+        pipedProducers: []
+      })
       
       /*
        存贮到数据库
@@ -131,12 +129,10 @@ export class RouterService {
        */
       await MediaRouter.getRepository().save(mediaRouter);
 
-      RouterService.mediarouters.set(data.roomId, mediaRouter);
-    } catch (e) {
-      if (RouterService.mediarouters.has(data.roomId)) {
-        RouterService.mediarouters.delete(data.roomId);
-      }
+      // 【替换sql】
+      this.redis.saveOne(MEDIA_ROUTER, mediaRouter)
 
+    } catch (e) {
       // violates foreign key constraint because room doesn't exist
       // 如果发生异常
       // 发起 http 访问 consumer 服务器，删除该 router 条目
@@ -250,61 +246,128 @@ export class RouterService {
   // }
 
   /**
+   * 检查管道【事务处理方式】
+   * 
+   * @param data 
+   * @returns 
+   */
+  // public async checkToPipe(data: {
+  //   routerId: string;
+  //   producerId: string;
+  // }): Promise<any> {
+  //   /*
+  //    开启事务
+
+  //    通过 this.entityManager 获取数据库管理者 manager，
+  //    链式调用 transaction 函数，并传入回调
+  //    */
+  //   try {
+  //     return await this.entityManager.transaction(async (entityManager) => {
+  //       // 根据 routerId 查出一个 router
+  //       // const router = await entityManager.getRepository(MediaRouter).findOne({
+  //       //   lock: { mode: 'pessimistic_write' },
+  //       //   where: { id: data.routerId },
+  //       // });
+  //       // 调用多少遍，也会查询多少遍
+  //       // console.log("%c Line:284 =========== transaction start", "color:#33a5ff");
+  //       const router = await entityManager.getRepository(MediaRouter)
+  //         .createQueryBuilder('mediaRouter')
+  //         .setLock('pessimistic_write')
+  //         .leftJoinAndSelect('mediaRouter.worker', 'worker')
+  //         .where('mediaRouter.id = :routerId', { routerId: data.routerId })
+  //         .getOne();
+  //       // console.log("%c Line:284 =========== router", "color:#33a5ff", router);
+        
+  //       if (router && !router.pipedProducers.includes(data.producerId)) {
+  //         // 通过 router.roomId 获取 room
+  //         const room = await this.roomService.get({
+  //           id: router.roomId,
+  //         });
+  
+  //         /**
+  //          * 向 consumer 服务发起 http 请求【当事务正常执行才会发起】
+  //          * 多少个 producer 就发起多少次请求
+  //          */
+  //         await fetchApi({
+  //           host: router.worker.apiHost, // consumer
+  //           port: router.worker.apiPort, // consumer
+  //           path: '/routers/:routerId/destination_pipe_transports',
+  //           method: 'POST',
+  //           data: {
+  //             routerId: data.routerId, // 这是 consumer routerId
+  //             sourceProducerId: data.producerId, // prucuder 待消费的 producerId
+  //             sourceHost: room.worker.apiHost, // prucuder apiHost
+  //             sourcePort: room.worker.apiPort, // prucuder apiPort
+  //             sourceRouterId: room.routerId, // 这是 prucuder routerId
+  //           },
+  //         });
+  
+  //         // 将 producerId 缓存到 router.pipedProducers
+  //         // router.pipedProducers.push(data.producerId);
+  //         let pipedProducers
+  //         if (router.pipedProducers) {
+  //           pipedProducers = router.pipedProducers.split(',')
+  //         } else {
+  //           pipedProducers = []
+  //         }
+  //         pipedProducers.push(data.producerId);
+  //         router.pipedProducers = pipedProducers.join(',')
+  
+  //         // 使用 entityManager 保存 router 到数据库
+  //         await entityManager.save(router);
+  //       }
+  //     });
+  //   } catch (error) {
+  //     console.error('checkToPipe error =>', error)
+  //   }
+  // }
+
+
+  /**
    * 检查管道
    * 
    * @param data 
    * @returns 
    */
-  public checkToPipe(data: { routerId: string; producerId: string }) {
-    /*
-     开启事务
-
-     通过 this.entityManager 获取数据库管理者 manager，
-     链式调用 transaction 函数，并传入回调
-     */
-    return this.entityManager.transaction(async (entityManager) => {
-      // 【查一】
+  public async checkToPipe(data: {
+    routerId: string;
+    producerId: string;
+  }) {
+    const lockKey = `lock_${data.routerId}`
+    const lockValue = 'isLock'
+    const isLock = await this.redis.lock(lockKey, lockValue, 10)
+    if (isLock) {
       // 根据 routerId 查出一个 router
-      // const router = await entityManager.getRepository(MediaRouter).findOne({
-      //   lock: { mode: 'pessimistic_write' },
-      //   where: { id: data.routerId },
-      // });
-      const router = await entityManager.getRepository(MediaRouter)
-        .createQueryBuilder('mediaRouter')
-        .setLock('pessimistic_write')
-        .where('mediaRouter.id = :routerId', { routerId: data.routerId })
-        .getOne();
-      console.log("%c Line:284 =========== router", "color:#33a5ff", router);
-
+      const router = await this.redis.findOne(MEDIA_ROUTER, data.routerId)
+      // console.log("%c Line:340 🌰 router", "color:#ed9ec7", router);
+    
       if (router && !router.pipedProducers.includes(data.producerId)) {
-        // 【查二】
+        console.log("%c Line:345 🥓🥓 !router.pipedProducers.includes(data.producerId)", "color:#6ec1c2", data.producerId);
+
         // 通过 router.roomId 获取 room
         const room = await this.roomService.get({
           id: router.roomId,
         });
-       
-        // 【查三】
-        // 通过 router.workerId 查到对应 worker(consumer)
+
         const worker = await this.workerService.get({
           workerId: router.workerId,
         });
-
-        // 【请求一】
+      
         /**
          * 向 consumer 服务发起 http 请求【当事务正常执行才会发起】
          * 多少个 producer 就发起多少次请求
          */
-        await fetchApi({
-          host: worker.apiHost,
-          port: worker.apiPort,
+        const res = await fetchApi({
+          host: worker.apiHost, // consumer
+          port: worker.apiPort, // consumer
           path: '/routers/:routerId/destination_pipe_transports',
           method: 'POST',
           data: {
             routerId: data.routerId, // 这是 consumer routerId
-            sourceHost: room.worker.apiHost,
-            sourcePort: room.worker.apiPort,
+            sourceProducerId: data.producerId, // prucuder 待消费的 producerId
+            sourceHost: room.worker.apiHost, // prucuder apiHost
+            sourcePort: room.worker.apiPort, // prucuder apiPort
             sourceRouterId: room.routerId, // 这是 prucuder routerId
-            sourceProducerId: data.producerId,
           },
         });
 
@@ -319,40 +382,49 @@ export class RouterService {
         pipedProducers.push(data.producerId);
         router.pipedProducers = pipedProducers.join(',')
 
-        // 【保存一】
-        // 使用 entityManager 保存 router 到数据库
-        await entityManager.save(router);
-      }
-    });
-  }
+        await this.redis.saveOne(MEDIA_ROUTER, router)
 
+        this.redis.unlock(lockKey, lockValue)
+      }
+    }
+  }
+ 
   /**
    * 检查管道
    * 
    * @param data 
    * @returns 
    */
-  // public async checkToPipe(data: { routerId: string; producerId: string }) {
-
+  // public async checkToPipe(data: {
+  //   routerId: string;
+  //   producerId: string;
+  // }) {
+  //   console.log("%c Line:340 🍺 checkToPipe", "color:#f5ce50");
+    
   //   // 根据 routerId 查出一个 router
-  //   const router = await this.entityManager.getRepository(MediaRouter).findOne({
-  //     where: { id: data.routerId },
-  //     relations: {
-  //       worker: true
+  //   const router = await MediaRouter.getRepository().findOne({
+  //     where: {
+  //       id: data.routerId
   //     }
   //   });
   
-  //   if (router && !router.pipedProducers.includes(data.producerId)) {
-  //     // 通过 router.workerId 查到对应 worker(consumer)
-  //     const worker = await this.workerService.get({
-  //       workerId: router.workerId,
-  //     });
+  //   // if (router && !router.pipedProducers.includes(data.producerId)) {
+  //   // if (router && !RouterService.producerList.has(`${data.routerId}_${data.producerId}`)) {
+  //   if (router && !RoomService.routerList.get(data.routerId)?.pipedProducers.includes(data.producerId)) {
+  //     // console.log("%c Line:283 🍞 !router.pipedProducers.includes(data.producerId) ==> data.producerId: ", "color:#ea7e5c", data.producerId);
+  //     console.log("%c Line:345 🥓 !RoomService.routerList.get(data.routerId)?.pipedProducers.includes(data.producerId)", "color:#6ec1c2", data.producerId);
+  //     // RouterService.producerList.set(`${data.routerId}_${data.producerId}`, data)
+  //     RoomService.routerList.get(data.routerId)?.pipedProducers.push(data.producerId)
 
   //     // 通过 router.roomId 获取 room
   //     const room = await this.roomService.get({
   //       id: router.roomId,
   //     });
 
+  //     const worker = await this.workerService.get({
+  //       workerId: router.workerId,
+  //     });
+      
   //     /**
   //      * 向 consumer 服务发起 http 请求【当事务正常执行才会发起】
   //      * 多少个 producer 就发起多少次请求
@@ -371,11 +443,19 @@ export class RouterService {
   //       },
   //     });
 
-  //     // 将 producerId 缓存到 router.pipedProducers 数组中
-  //     router.pipedProducers.push(data.producerId);
+  //     // 将 producerId 缓存到 router.pipedProducers
+  //     // router.pipedProducers.push(data.producerId);
+  //     let pipedProducers
+  //     if (router.pipedProducers) {
+  //       pipedProducers = router.pipedProducers.split(',')
+  //     } else {
+  //       pipedProducers = []
+  //     }
+  //     pipedProducers.push(data.producerId);
+  //     router.pipedProducers = pipedProducers.join(',')
 
   //     // 使用 entityManager 保存 router 到数据库
-  //     await this.entityManager.save(router);
+  //     await MediaRouter.getRepository().save(router);
   //   }
     
   // }

@@ -29,7 +29,6 @@ export class ConsumerService {
      */
     id: string;
   }> {
-    console.log("%c Line:33 🥟 data", "color:#3f7cff", data);
     // 创建 transport service，并调用实例方法 get，获取 transport
     const transport = await this.transportService.get({
       transportId: data.transportId,
@@ -97,7 +96,6 @@ export class ConsumerService {
     
     // 如果类型是'consumer'
     if (transport.type === constants.CONSUMER) {
-      
       /**
        * 通过 consumer 的 transport，找到对应的 router（找到对应的worder）
        * 通过 router 关联的 roomId，找到对应的 room（找到对应的worder）
@@ -122,8 +120,6 @@ export class ConsumerService {
         peerId: data.peerId
       }
       // console.log("%c consumer.service.ts createConsumer() 🍩 执行接口 /transports/:transportId/consumer params:", params);
-
-      
       /**
        * 上面创建 pipeTransport 准备就绪后，向 consumer 服务发起请求，通知 consumer 服务进行消费
        */

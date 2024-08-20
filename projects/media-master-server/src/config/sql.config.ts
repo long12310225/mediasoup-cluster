@@ -1,5 +1,7 @@
 import env from '@/config/env';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { RedisModuleOptions } from '@/shared/redis';
+import { RedisOptions } from 'ioredis';
 
 export const sqlConfig: TypeOrmModuleOptions = {
   type: 'mysql',
@@ -14,4 +16,20 @@ export const sqlConfig: TypeOrmModuleOptions = {
   extra: {
     charset: 'utf8mb4_general_ci',
   },
+  cache: {
+    type: "ioredis",
+    options: {
+      port: env.getEnv('REDIS_PORT'),
+      host: env.getEnv('REDIS_HOST'),
+      password: String(env.getEnv('REDIS_PASSWORD')),
+      db: 1,
+    }
+  }
+}
+
+export const redisConfig = <RedisOptions>{
+  port: env.getEnv('REDIS_PORT'),
+  host: env.getEnv('REDIS_HOST'),
+  password: String(env.getEnv('REDIS_PASSWORD')),
+  db: env.getEnv('REDIS_DB'),
 }

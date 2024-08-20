@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 // import { APP_INTERCEPTOR } from '@nestjs/core';
 // import { LogInterceptor } from './common/interceptors/log.interceptor';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { sqlConfig } from './config/sql.config'
+import { sqlConfig, redisConfig } from './config/sql.config'
 import { MediaRoomModule } from './modules/media.room/media.room.module';
 import { MediaRouterModule } from './modules/media.router/media.router.module';
 import { MediaWebRTCTransportModule } from './modules/media.webrtc.transport/media.webrtc.transport.module';
@@ -15,9 +15,11 @@ import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { MediaDataConsumerModule } from './modules/media.dataConsumer/media.dataConsumer.module';
 import { OpenTelemetryModule } from 'nestjs-otel';
 import { LoggerModule } from './shared/logger/logger.module';
+import { RedisModule } from './shared/redis';
 
 @Module({
   imports: [
+    RedisModule.forRoot(redisConfig),
     OpenTelemetryModule.forRoot({
       metrics: {
         hostMetrics: true,

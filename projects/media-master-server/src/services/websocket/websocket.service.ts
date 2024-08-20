@@ -25,7 +25,8 @@ export class WebSocketService {
    * Async queue to manage rooms.
    * @type {AwaitQueue}
    */
-  private queue = new AwaitQueue();
+  private queuePeer = new AwaitQueue();
+  private queueCreateConsumer = new AwaitQueue();
 
   /**
    * Room id.
@@ -84,6 +85,11 @@ export class WebSocketService {
         protooWebSocketTransportFun,
         reject, // connectionrequest这个是protoo.WebSocketServer的监听事件
       ) => {
+        console.info(" -------------------------------------- ");
+        console.info(" ------------- 新用户连接 ------------- ");
+        console.info(" --------- connectionrequest --------- ");
+        console.info(" -------------------------------------- ");
+
         // The client indicates the roomId and peerId in the URL query.
         const u = url.parse(info.request.url, true); // 解析ws的url
         const roomId: string = u.query['roomId'] || uuidv4();
@@ -94,21 +100,20 @@ export class WebSocketService {
         }
         
         // 创建队列，将以下逻辑，统一放在一起执行；同时有其他人进入时，而不阻塞后者
-        this.queue.push(async () => {
+        this.queuePeer.push(async () => {
           // 当 ws 连接时，自动创建房间，或者获取房间
-          // console.time("create room 耗时");
-          console.log(" 🍉 队列开始：");
+          console.time(chalk.yellowBright(`用户:${peerId} this.roomService.createOrGetProducerRoom 房间耗时`))
           const room = await this.roomService.createOrGetProducerRoom({ roomId });
-          // console.timeEnd("create room 耗时");
-          console.log("%c Line:100 🍻 🍻 🍻 room", "color:#33a5ff", room);
+          console.timeEnd(chalk.yellowBright(`用户:${peerId} this.roomService.createOrGetProducerRoom 房间耗时`))
+          // console.log("%c Line:100 🍻 🍻 🍻 room", "color:#33a5ff", room);
           let router
           if (room?.id) {
-            // console.time("create router 耗时");
             // 创建 router
+            console.time(chalk.yellowBright(`用户:${peerId} this.routerService.getOrCreate 路由耗时`))
             router = await this.routerService.getOrCreate({
               roomId: room.id
             })
-            // console.timeEnd("create router 耗时");
+            console.timeEnd(chalk.yellowBright(`用户:${peerId} this.routerService.getOrCreate 路由耗时`))
           }
 
           this.initData(roomId)
@@ -142,11 +147,6 @@ export class WebSocketService {
       console.warn('createProtooPeer() | 已存在相同peerId用户, closing it [peerId:%s]', peerId);
       existingPeer.close();
     }
-
-    console.info(" -------------------------------------- ");
-    console.info(" ------------- 新用户进入 ------------- ");
-    console.info(" --------- createProtooPeer --------- ");
-    console.info(" -------------------------------------- ");
 
     let peer;
     try {
@@ -274,7 +274,9 @@ export class WebSocketService {
           if (producing && !consuming) {
             mediasoupTransport = await this.transportService.createProducerTransport(data);
           } else if (!producing && consuming) {
+            console.time(`用户${peer.id} 信令接口: createWebRtcTransport创建consumer createConsumerTransport耗时`)
             mediasoupTransport = await this.transportService.createConsumerTransport(data);
+            console.timeEnd(`用户${peer.id} 信令接口: createWebRtcTransport创建consumer createConsumerTransport耗时`)
           } else {
             console.error('请检查参数: producing、consuming')
             accept('请检查参数: producing、consuming')
@@ -356,13 +358,16 @@ export class WebSocketService {
           for (const producer of joinedPeer.data.producers.values()) {
             // 所有现存的生产者，都创建对此新连接进来的人的消费渠道，
             // 效果：其他人可以看到新进来的人的画面
-            this._createConsumer({
-              consumerPeer: peer, // 当前 peer 
-              producerPeer: joinedPeer, // 他人的 peer
-              producer, // 他人的 producer
+            this.queueCreateConsumer.push(async () => {
+              await this._createConsumer({
+                consumerPeer: peer, // 当前 peer 
+                producerPeer: joinedPeer, // 他人的 peer
+                producer, // 他人的 producer
+              })
             })
+            
           }
-         
+          
           // Create DataConsumers for existing DataProducers.
           for (const dataProducer of joinedPeer.data.dataProducers.values()) {
             if (dataProducer.label === 'bot') continue
@@ -455,11 +460,13 @@ export class WebSocketService {
          * 在这里创建出 producer 之后，遍历除自己以外的所有人，让其他人消费自己的 producer
          */
         for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
+          this.queueCreateConsumer.push(async () => {
+            await this._createConsumer({
+              consumerPeer: otherPeer, // 他人 peer
+              producerPeer: peer, // 当前 peer
+              producer: producerData, // 当前 producer
+            })
 
-          this._createConsumer({
-            consumerPeer: otherPeer, // 他人 peer
-            producerPeer: peer, // 当前 peer
-            producer: producerData, // 当前 producer
           })
         }
 

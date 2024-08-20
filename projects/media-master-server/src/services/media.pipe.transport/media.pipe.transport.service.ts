@@ -4,6 +4,7 @@ import { fetchApi } from '@/shared/fetch'
 import { types } from 'mediasoup';
 import { MediaRouterService } from '../media.router/media.router.service';
 import env from '@/config/env';
+import * as chalk from 'chalk';
 
 @Injectable()
 export class MediaPipeTransportService {
@@ -71,11 +72,13 @@ export class MediaPipeTransportService {
       if(!sourceResult) return
     
       // transport 连接
+      console.time(chalk.blueBright(`pipeTransportId:${transport.id} transport.connect 耗时`))
       await transport.connect({
         ip: sourceResult.sourceIp, // producer pipeTransport 属性
         port: sourceResult.sourcePort, // producer pipeTransport 属性
         srtpParameters: sourceResult.sourceSrtpParameters, // producer pipeTransport 属性
       });
+      console.timeEnd(chalk.blueBright(`pipeTransportId:${transport.id} transport.connect 耗时`))
     } catch (e) {
       console.error("%c Line:67 🍢 e", "color:#ffdd4d", e);
     }
@@ -102,12 +105,14 @@ export class MediaPipeTransportService {
 
     let pipeDataProducer
     try {
+      console.time(chalk.blueBright(`sourceProducerId:${data.sourceProducerId} transport.produce 耗时`))
       pipeDataProducer = await transport.produce({
         id: data.sourceProducerId, // prucuder 待消费的 producerId
         kind: consumerResult.kind, // producer 服务的消费结果
         rtpParameters: consumerResult.rtpParameters, // producer 服务的消费结果
         paused: consumerResult.producerPaused, // producer 服务的消费结果
       });
+      console.timeEnd(chalk.blueBright(`sourceProducerId:${data.sourceProducerId} transport.produce 耗时`))
     } catch (e) {
       console.error("%c Line:95 🍊 e", "color:#fca650", e);
     }

@@ -18,10 +18,10 @@ export class ConsumerController {
   /**
    * 创建 consumer
    */
-  @Post('/consumer_transports/:transportId/consume')
-  create(@Params() data) { 
-    return this.consumerService.create(data)
-  }
+  // @Post('/consumer_transports/:transportId/consume')
+  // create(@Params() data) { 
+  //   return this.consumerService.create(data)
+  // }
   /**
    * resume consumer
    */

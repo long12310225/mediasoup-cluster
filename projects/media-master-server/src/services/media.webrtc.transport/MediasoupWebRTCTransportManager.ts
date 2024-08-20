@@ -3,6 +3,7 @@ import { types } from 'mediasoup';
 import { MediaRouterService } from '../media.router/media.router.service';
 import env from '@/config/env';
 import { fetchApiMaster } from '@/shared/fetch'
+import * as chalk from 'chalk';
 
 @Injectable()
 export class MediasoupWebRTCTransportManager {
@@ -23,8 +24,11 @@ export class MediasoupWebRTCTransportManager {
     peerId: string
   }): Promise<types.WebRtcTransport> {
     // 根据 routerId 从 mediasoupRouterManager 中获取出相关 router
+    console.time(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager this.mediaRouterService.get 耗时`))
     const router = this.mediaRouterService.get(data.routerId);
+    console.timeEnd(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager this.mediaRouterService.get 耗时`))
 
+    console.time(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager env.getEnv 耗时`))
     /* 准备数据 */
     // 最大 incoming 位数
     const maxIncomingBitrate =
@@ -35,6 +39,7 @@ export class MediasoupWebRTCTransportManager {
       Number(
         env.getEnv('MEDIASOUP_WEBRTC_TRANSPORT_INITIAL_AVAILABLE_OUTGOING_BITRATE')
       ) || 1000000;
+    // v3.14.8 去掉了这个参数
     const minimumAvailableOutgoingBitrate =
       Number(
         env.getEnv('MEDIASOUP_WEBRTC_TRANSPORT_MINIMUM_AVAILABLE_OUTGOING_BITRATE')
@@ -43,34 +48,43 @@ export class MediasoupWebRTCTransportManager {
       Number(
         env.getEnv('MEDIASOUP_WEBRTC_TRANSPORT_MAX_SCTP_MESSAGE_SIZE')
       ) || 262144;
-    
     // listenIps
     const listenIps = JSON.parse(
       env.getEnv('MEDIASOUP_WEBRTC_TRANSPORT_LISTEN_IPS') || '[]'
     );
+    console.timeEnd(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager env.getEnv 耗时`))
 
     // https://mediasoup.org/documentation/v3/mediasoup/api/#router-createWebRtcTransport
     // 创建一个 webRtc 传输对象
-    const transport = await router.createWebRtcTransport({
+    const params = {
       listenIps: listenIps,
+      initialAvailableOutgoingBitrate,
+      maxSctpMessageSize,
+      maxIncomingBitrate,
       enableUdp: true,
       enableTcp: true,
       preferUdp: true,
-      initialAvailableOutgoingBitrate,
-      maxSctpMessageSize,
-      ...data.webRtcTransportOptions
-    });
+      // ...data.webRtcTransportOptions
+    }
+    console.log("%c Line:69 🍡 router.createWebRtcTransport params", "color:#7f2b82", params);
+    console.time(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager router.createWebRtcTransport 耗时`))
+    const transport = await router.createWebRtcTransport(params);
+    console.timeEnd(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager router.createWebRtcTransport 耗时`))
 
-    this.transportHanlder(transport, data.peerId)
+    console.time(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager this.transportHanlder 耗时`))
+    await this.transportHanlder(transport, data.peerId)
+    console.timeEnd(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager this.transportHanlder 耗时`))
 
     // 给传输对象设置最大位数
-    if (maxIncomingBitrate) {
-      try {
-        await transport.setMaxIncomingBitrate(maxIncomingBitrate);
-      } catch (error) {
-        console.warn('WebRtcTransport "maxIncomingBitrate" event [error:%s]', error)
-      }
-    }
+    // if (maxIncomingBitrate) {
+    //   try {
+    //     console.time(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager transport.setMaxIncomingBitrate 耗时`))
+    //     await transport.setMaxIncomingBitrate(maxIncomingBitrate);
+    //     console.timeEnd(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager transport.setMaxIncomingBitrate 耗时`))
+    //   } catch (error) {
+    //     console.warn('WebRtcTransport "maxIncomingBitrate" event [error:%s]', error)
+    //   }
+    // }
 
     return transport;
   }

@@ -8,7 +8,7 @@ import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { types } from 'mediasoup';
 import { constants } from '@/shared/constants';
 import { WorkerService } from '../worker/worker.service';
-import { fetchApi } from '@/shared/fetch'
+import { fetchApi } from '@/shared/fetch';
 import protoo from '@/shared/protoo-server';
 import { RoomDto } from '@/dto';
 
@@ -16,10 +16,11 @@ import { RoomDto } from '@/dto';
 export class RoomService {
   // 缓存 protooRooms
   static protooRooms = new Map<string, any>();
+  static routerList = new Map<string, any>();
 
   constructor(
     private readonly workerService: WorkerService,
-  ) {}
+  ) { }
 
   /**
    * 创建房间
@@ -303,6 +304,8 @@ export class RoomService {
     // 异步关闭 router（房间）
     await Promise.all(
       routers.map((router) => {
+        RoomService.routerList.delete(router.id) // 移除缓存
+
         this.closeRouter({
           routerId: router.id,
           worker: router.worker

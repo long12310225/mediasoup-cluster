@@ -4,6 +4,7 @@ import { types } from 'mediasoup';
 import { MediasoupWebRTCTransportManager } from './MediasoupWebRTCTransportManager';
 import { MediaRouterService } from '../media.router/media.router.service';
 import env from '@/config/env';
+import * as chalk from 'chalk';
 
 @Injectable()
 export class MediasoupConsumerWebRTCTransport extends MediasoupWebRTCTransportManager {
@@ -20,7 +21,9 @@ export class MediasoupConsumerWebRTCTransport extends MediasoupWebRTCTransportMa
     webRtcTransportOptions: Object,
     peerId: string
   }) {
+    console.time(chalk.bgBlue(`用户${data.peerId} createMediasoupWebRTCTransport create 耗时`))
     const transport = await this.create(data);
+    console.timeEnd(chalk.bgBlue(`用户${data.peerId} createMediasoupWebRTCTransport create 耗时`))
 
     // 缓存到 transports 中
     const constructor = this.constructor as typeof MediasoupConsumerWebRTCTransport;
