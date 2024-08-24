@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { types } from 'mediasoup';
 import { MediasoupConsumerWebRTCTransport } from '../media.webrtc.transport/mediasoup.consumer.webrtc.transport.service';
 import { MediaRouterService } from '../media.router/media.router.service';
+import { MediaPlainTransportService } from '../media.plain.transport/media.plain.transport.service';
 import { fetchApiMaster } from '@/shared/fetch'
 
 @Injectable()
@@ -11,6 +12,7 @@ export class MediaConsumerService {
 
   constructor(
     private readonly mediasoupConsumerWebRTCTransport: MediasoupConsumerWebRTCTransport,
+    private readonly mediaPlainTransportService: MediaPlainTransportService,
     private readonly mediaRouterService: MediaRouterService,
   ) { }
 
@@ -30,12 +32,11 @@ export class MediaConsumerService {
     transportId: string;
     producerId: string;
     rtpCapabilities: types.RtpCapabilities;
-    peerId: string;
+    peerId?: string;
+    broadcasterId?: string;
   }) {
-    // console.log("%c Line:37 创建 mediasoup consumer", "color:#6ec1c2", data);
     // 获取 router
     const router = this.mediaRouterService.get(data.routerId);
-    // console.log("%c Line:37 🍺 router", "color:#4fff4B", router);
 
     if (
       !router.canConsume({
@@ -47,9 +48,18 @@ export class MediaConsumerService {
     }
 
     // 获取 transport
-    const transport = this.mediasoupConsumerWebRTCTransport.get(
-      data.transportId
-    );
+    let transport
+    if (data?.peerId) {
+      transport = this.mediasoupConsumerWebRTCTransport.get(
+        data.transportId
+      );
+    } else if(data?.broadcasterId) {
+      transport = this.mediaPlainTransportService.get(
+        data.transportId
+      );
+      console.log("%c Line:373 🥥 5 创建 consumer -- create get transport: ", "color:#f5ce50", transport);
+    }
+    
     if (!transport) {
       console.warn('_createConsumer() | Transport for consuming not found')
       return
@@ -70,12 +80,15 @@ export class MediaConsumerService {
       return
     }
 
-    // console.log("%c Line:60 🍣 consumer", "color:#42b983", consumer);
-
     // 缓存 consumer
     MediaConsumerService.consumers.set(consumer.id, consumer);
-
-    this.consumerHandler(consumer, data.peerId);
+    console.log("%c Line:373 🥥 5 创建 consumer -- create MediaConsumerService.consumers: ", "color:#f5ce50", MediaConsumerService.consumers);
+     
+    if (data?.peerId) {
+      this.handleConsumer(consumer, data?.peerId);
+    } else if(data?.broadcasterId) {
+      this.handleBroadcastConsumer(consumer, data?.broadcasterId)
+    }
 
     // 返回 consumer 信息
     return {
@@ -93,7 +106,7 @@ export class MediaConsumerService {
    * @param consumer 
    * @param peerId 
    */
-  consumerHandler(consumer, peerId) {
+  handleConsumer(consumer, peerId) {
     // consumerPeer.data.consumers.delete(consumer.id)
     consumer.on('transportclose', () => {
       // 发起 http 请求，向主应用传递事件
@@ -178,25 +191,25 @@ export class MediaConsumerService {
       });
     })
 
-    // consumer.on('score', (score) => {
-    //   // console.log("%c Line:184 🥝 score", "color:#fca650", score);
-    //   // consumerPeer.notify('consumerScore', {
-    //   //   consumerId: consumer.id, score
-    //   // }).catch(() => { })
+    consumer.on('score', (score) => {
+      // console.log("%c Line:184 🥝 score", "color:#fca650", score);
+      // consumerPeer.notify('consumerScore', {
+      //   consumerId: consumer.id, score
+      // }).catch(() => { })
       
-    //   // fetchApiMaster({
-    //   //   path: '/message/notify',
-    //   //   method: 'POST',
-    //   //   data: {
-    //   //     method: 'consumerScore',
-    //   //     params: {
-    //   //       consumerId: consumer.id,
-    //   //       score
-    //   //     },
-    //   //     peerId
-    //   //   },
-    //   // });
-    // })
+      fetchApiMaster({
+        path: '/message/notify',
+        method: 'POST',
+        data: {
+          method: 'consumerScore',
+          params: {
+            consumerId: consumer.id,
+            score
+          },
+          peerId
+        },
+      });
+    })
 
     // consumer.on('layerschange', (layers) => {
     //   // console.log("%c Line:208 🍣", "color:#ea7e5c", layers);
@@ -226,6 +239,39 @@ export class MediaConsumerService {
     // })
   }
 
+  handleBroadcastConsumer(consumer, broadcasterId) {
+    consumer.on('transportclose', () => {
+      // 发起 http 请求，向主应用传递事件
+      fetchApiMaster({
+        path: '/broadcast/consumer/handle',
+        method: 'POST',
+        data: {
+          method: 'transportclose',
+          params: {
+            consumerId: consumer.id
+          },
+          broadcasterId
+        }
+      });
+    })
+
+    consumer.on('producerclose', () => {
+      // 发起 http 请求，向主应用传递事件
+      fetchApiMaster({
+        path: '/broadcast/consumer/handle',
+        method: 'POST',
+        data: {
+          method: 'producerclose',
+          params: {
+            consumerId: consumer.id,
+          },
+          broadcasterId
+        }
+      });
+    });
+  
+  }
+
   /**
    * 根据 consumerId 暂停媒体流
    * @param data 
@@ -247,8 +293,12 @@ export class MediaConsumerService {
    * @returns 
    */
   async resume(data: { consumerId: string }) {
+    console.log("%c Line:373 🌰 6 消费 consumer -- resume data", "color:#f5ce50", data);
+     
     // 从缓存中取出 consumer
     const consumer = this.get(data);
+    console.log("%c Line:373 🌰 6 消费 consumer -- resume consumer", "color:#f5ce50", consumer);
+     
     // 取消暂停服务器端消费者
     await consumer.resume();
     // 返回空对象

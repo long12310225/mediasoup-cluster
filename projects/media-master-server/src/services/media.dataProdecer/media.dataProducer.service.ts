@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { types } from 'mediasoup';
 import { MediasoupProducerWebRTCTransport } from '../media.webrtc.transport/mediasoup.producer.webrtc.transport.service';
+import { fetchApiMaster } from '@/shared/fetch';
 
 @Injectable()
 export class MediaDataProducerService {
@@ -20,6 +21,7 @@ export class MediaDataProducerService {
     protocol: string;
     sctpStreamParameters: any;
     appData: any;
+    broadcasterId?: string
   }) {
     const transport = this.mediasoupProducerWebRTCTransport.get(
       data.transportId,
@@ -38,6 +40,10 @@ export class MediaDataProducerService {
       appData: data.appData,
     });
 
+    if (data?.broadcasterId) {
+      this.handleBroadcastDataProducer(dataProducer, data?.broadcasterId)
+    }
+
     // 缓存 producer
     MediaDataProducerService.dataProducers.set(dataProducer.id, dataProducer);
 
@@ -51,6 +57,24 @@ export class MediaDataProducerService {
       protocol: dataProducer.protocol,
       appData: dataProducer.appData,
     };
+  }
+
+  handleBroadcastDataProducer(dataProducer, broadcasterId) {
+    dataProducer.on('transportclose', () => {
+      // Remove from its map.
+      fetchApiMaster({
+        path: '/broadcast/dataProducer/handle',
+        method: 'POST',
+        data: {
+          type: 'transportclose',
+          params: {
+            dataProducerId: dataProducer.id,
+          },
+          broadcasterId,
+        },
+      });
+    });
+
   }
 
   /**

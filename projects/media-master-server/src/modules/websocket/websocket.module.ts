@@ -6,6 +6,8 @@ import { MediaRoom } from '@/dao/room/media.room.do';
 import { MediaRouter } from '@/dao/router/media.router.do';
 import { Peer } from '@/dao/peer/peer.do';
 
+import { WebSocketController } from '@/controllers/websocket/websocket.controller';
+
 import { WebSocketService } from '../../services/websocket/websocket.service';
 import { RoomService } from '@/services/room/room.service';
 import { WorkerService } from '../../services/worker/worker.service';
@@ -14,7 +16,6 @@ import { TransportService } from '@/services/transport/transport.service';
 import { ConsumerService } from '@/services/consumer/consumer.service'; 
 import { ProducerService } from '@/services/producer/producer.service';
 import { DataProducerService } from '@/services/dataProducer/dataProducer.service';
-import { WebSocketController } from '@/controllers/websocket/websocket.controller';
 import { DataConsumerService } from '@/services/dataConsumer/dataConsumer.service';
 import { PeerService } from '@/services/peer/peer.service'; 
 

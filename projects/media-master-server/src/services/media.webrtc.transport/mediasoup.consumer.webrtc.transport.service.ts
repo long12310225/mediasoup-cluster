@@ -19,11 +19,12 @@ export class MediasoupConsumerWebRTCTransport extends MediasoupWebRTCTransportMa
   async createMediasoupWebRTCTransport(data: {
     routerId: string,
     webRtcTransportOptions: Object,
-    peerId: string
+    peerId?: string
   }) {
-    console.time(chalk.bgBlue(`用户${data.peerId} createMediasoupWebRTCTransport create 耗时`))
+    const timestrap = new Date().getTime()
+    console.time(chalk.bgBlue(`${timestrap} createMediasoupWebRTCTransport create 耗时`))
     const transport = await this.create(data);
-    console.timeEnd(chalk.bgBlue(`用户${data.peerId} createMediasoupWebRTCTransport create 耗时`))
+    console.timeEnd(chalk.bgBlue(`${timestrap} createMediasoupWebRTCTransport create 耗时`))
 
     // 缓存到 transports 中
     const constructor = this.constructor as typeof MediasoupConsumerWebRTCTransport;
@@ -35,7 +36,7 @@ export class MediasoupConsumerWebRTCTransport extends MediasoupWebRTCTransportMa
       iceParameters: transport.iceParameters,
       iceCandidates: transport.iceCandidates,
       dtlsParameters: transport.dtlsParameters,
-      sctpParameters: transport.sctpParameters, // TODO 验证什么时候才会有内容
+      sctpParameters: transport.sctpParameters
     }
     // console.log("%c Line:35 🍅 consumer transportData", "color:#ed9ec7", transportData);
     return transportData;

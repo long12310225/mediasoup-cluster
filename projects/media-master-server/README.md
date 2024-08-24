@@ -193,6 +193,24 @@ CREATE TABLE media_data_consumer (
 ```
 
 
+## 录制脚本使用注意事项
+
+需要先安装： `ffmpeg httpie jq`
+
+若正在录制了，退出录制使用： `ctrl + z`
+
+查询本地正在执行的 ffmpeg 列表： `ps -ef | grep ffmpeg`
+
+```bash
+ouyang@ouyangdeiMac broadcasters % ps -ef | grep ffmpeg
+  501  5937  5423   0 10:38上午 ttys003    0:00.01 sh ffmpeg_pull.sh
+  501  5991  5937   0 10:40上午 ttys003    0:00.44 ffmpeg -thread_queue_size 10240 -protocol_whitelist file,udp,rtp -i v.sdp -vcodec copy -y ./output.webm
+  501  6956  5423   0 10:52上午 ttys003    0:00.00 grep ffmpeg
+```
+删除进程：
+`kill -9 5991`
+
+
 ## 相关文档
 
 [ioredis文档](https://redis.github.io/ioredis/classes/Redis.html)

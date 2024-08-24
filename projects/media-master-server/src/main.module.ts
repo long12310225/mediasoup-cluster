@@ -17,6 +17,7 @@ import { OpenTelemetryModule } from 'nestjs-otel';
 import { LoggerModule } from './shared/logger/logger.module';
 import { PeerModule } from './modules/peer/peer.module';
 import { RedisModule } from './shared/redis';
+import { BroadcasterModule } from './modules/broadcaster/broadcaster.module';
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { RedisModule } from './shared/redis';
     WebSocketModule,
     DataConsumerModule,
     DataProducerModule,
-    PeerModule
+    PeerModule,
+    BroadcasterModule
   ],
   // providers: [
   //   {

@@ -24,6 +24,7 @@ export class DataProducerService {
     protocol: string;
     sctpStreamParameters: any;
     appData: any;
+    broadcasterId?: string
   }): Promise<any> {
     // 根据 transportId 查出数据库相关 transport
     const transport = await this.transportService.get({
@@ -44,6 +45,7 @@ export class DataProducerService {
           protocol: data.protocol,
           sctpStreamParameters: data.sctpStreamParameters,
           appData: data.appData,
+          broadcasterId: data?.broadcasterId
         },
       });
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-SERVER_URL=https://10.2.30.27:4443
+SERVER_URL=https://10.2.110.222:4443
 ROOM_ID=0000
-PRODUCER_ID=040fcd0e-89e0-40b8-848c-82570a364a95  
+PRODUCER_ID=51781a4d-a446-4760-9b83-6f76c122de38 
 MEDIA_FILE=./output.webm
 
 function show_usage()
@@ -65,7 +65,7 @@ BROADCASTER_ID=$(LC_CTYPE=C tr -dc A-Za-z0-9 < /dev/urandom | fold -w ${1:-32} |
 HTTPIE_COMMAND="http --check-status --verify=no"
 #AUDIO_SSRC=4253847681
 #AUDIO_PT=111
-VIDEO_SSRC=3541801792
+VIDEO_SSRC=2240421475
 VIDEO_PT=96
 
 #

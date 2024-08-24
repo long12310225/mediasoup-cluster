@@ -48,7 +48,8 @@ class MediasoupWorkerManager {
     if (worker) {
       return worker;
     }
-    throw new Error('Worker not found');
+    console.error('Worker not found, 请添加服务')
+    return
   }
 }
 

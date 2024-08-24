@@ -12,7 +12,7 @@ import env from '@/config/env';
 // 协议
 const WS_SUBPROTOCOL = env.getEnv('WS_SUBPROTOCOL');
 
-export default class WebSocketServer extends EnhancedEventEmitter {
+export class WebSocketServer extends EnhancedEventEmitter {
   /**
    * Run a WebSocket server instance.
    * @type {WebSocket-Node.WebSocketServer}

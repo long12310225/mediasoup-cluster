@@ -296,35 +296,35 @@ class Stats extends React.Component
 
 		if (isMe)
 		{
-			// sendTransportRemoteStats = await roomClient.getSendTransportRemoteStats()
-			// 	.catch(() => {});
+			sendTransportRemoteStats = await roomClient.getSendTransportRemoteStats()
+				.catch(() => {});
 
-			// sendTransportLocalStats = await roomClient.getSendTransportLocalStats()
-			// 	.catch(() => {});
+			sendTransportLocalStats = await roomClient.getSendTransportLocalStats()
+				.catch(() => {});
 
-			// recvTransportRemoteStats = await roomClient.getRecvTransportRemoteStats()
-			// 	.catch(() => {});
+			recvTransportRemoteStats = await roomClient.getRecvTransportRemoteStats()
+				.catch(() => {});
 
-			// recvTransportLocalStats = await roomClient.getRecvTransportLocalStats()
-			// 	.catch(() => {});
+			recvTransportLocalStats = await roomClient.getRecvTransportLocalStats()
+				.catch(() => {});
 
-			// audioProducerRemoteStats = await roomClient.getAudioRemoteStats()
-			// 	.catch(() => {});
+			audioProducerRemoteStats = await roomClient.getAudioRemoteStats()
+				.catch(() => {});
 
-			// audioProducerLocalStats = await roomClient.getAudioLocalStats()
-			// 	.catch(() => {});
+			audioProducerLocalStats = await roomClient.getAudioLocalStats()
+				.catch(() => {});
 
-			// videoProducerRemoteStats = await roomClient.getVideoRemoteStats()
-			// 	.catch(() => {});
+			videoProducerRemoteStats = await roomClient.getVideoRemoteStats()
+				.catch(() => {});
 
-			// videoProducerLocalStats = await roomClient.getVideoLocalStats()
-			// 	.catch(() => {});
+			videoProducerLocalStats = await roomClient.getVideoLocalStats()
+				.catch(() => {});
 
-			// chatDataProducerRemoteStats = await roomClient.getChatDataProducerRemoteStats()
-			// 	.catch(() => {});
+			chatDataProducerRemoteStats = await roomClient.getChatDataProducerRemoteStats()
+				.catch(() => {});
 
 			// botDataProducerRemoteStats = await roomClient.getBotDataProducerRemoteStats()
-			// 	.catch(() => {});
+      //   .catch(() => {});
 
 			// botDataConsumerRemoteStats =
 			// 	await roomClient.getDataConsumerRemoteStats(botDataConsumerId)
@@ -332,42 +332,42 @@ class Stats extends React.Component
 		}
 		else
 		{
-			// audioConsumerRemoteStats = await roomClient.getConsumerRemoteStats(audioConsumerId)
-			// 	.catch(() => {});
+			audioConsumerRemoteStats = await roomClient.getConsumerRemoteStats(audioConsumerId)
+				.catch(() => {});
 
-			// audioConsumerLocalStats = await roomClient.getConsumerLocalStats(audioConsumerId)
-			// 	.catch(() => {});
+			audioConsumerLocalStats = await roomClient.getConsumerLocalStats(audioConsumerId)
+				.catch(() => {});
 
-			// videoConsumerRemoteStats = await roomClient.getConsumerRemoteStats(videoConsumerId)
-			// 	.catch(() => {});
+			videoConsumerRemoteStats = await roomClient.getConsumerRemoteStats(videoConsumerId)
+				.catch(() => {});
 
-			// videoConsumerLocalStats = await roomClient.getConsumerLocalStats(videoConsumerId)
-			// 	.catch(() => {});
+			videoConsumerLocalStats = await roomClient.getConsumerLocalStats(videoConsumerId)
+				.catch(() => {});
 
-			// chatDataConsumerRemoteStats =
-			// 	await roomClient.getDataConsumerRemoteStats(chatDataConsumerId)
-			// 		.catch(() => {});
+			chatDataConsumerRemoteStats =
+				await roomClient.getDataConsumerRemoteStats(chatDataConsumerId)
+					.catch(() => {});
 		}
 
-		// this.setState(
-		// 	{
-		// 		sendTransportRemoteStats,
-		// 		sendTransportLocalStats,
-		// 		recvTransportRemoteStats,
-		// 		recvTransportLocalStats,
-		// 		audioProducerRemoteStats,
-		// 		audioProducerLocalStats,
-		// 		videoProducerRemoteStats,
-		// 		videoProducerLocalStats,
-		// 		chatDataProducerRemoteStats,
-		// 		botDataProducerRemoteStats,
-		// 		audioConsumerRemoteStats,
-		// 		audioConsumerLocalStats,
-		// 		videoConsumerRemoteStats,
-		// 		videoConsumerLocalStats,
-		// 		chatDataConsumerRemoteStats,
-		// 		botDataConsumerRemoteStats
-		// 	});
+		this.setState(
+			{
+				sendTransportRemoteStats,
+				sendTransportLocalStats,
+				recvTransportRemoteStats,
+				recvTransportLocalStats,
+				audioProducerRemoteStats,
+				audioProducerLocalStats,
+				videoProducerRemoteStats,
+				videoProducerLocalStats,
+				chatDataProducerRemoteStats,
+				// botDataProducerRemoteStats,
+				audioConsumerRemoteStats,
+				audioConsumerLocalStats,
+				videoConsumerRemoteStats,
+				videoConsumerLocalStats,
+				chatDataConsumerRemoteStats,
+				// botDataConsumerRemoteStats
+			});
 
 		this._delayTimer = setTimeout(() => this._start(), 2500);
 	}
@@ -387,13 +387,13 @@ class Stats extends React.Component
 				videoProducerRemoteStats    : null,
 				videoProducerLocalStats     : null,
 				chatDataProducerRemoteStats : null,
-				botDataProducerRemoteStats  : null,
+				// botDataProducerRemoteStats  : null,
 				audioConsumerRemoteStats    : null,
 				audioConsumerLocalStats     : null,
 				videoConsumerRemoteStats    : null,
 				videoConsumerLocalStats     : null,
 				chatDataConsumerRemoteStats : null,
-				botDataConsumerRemoteStats  : null
+				// botDataConsumerRemoteStats  : null
 			});
 	}
 

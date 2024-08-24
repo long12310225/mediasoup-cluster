@@ -25,6 +25,9 @@ export class MediaConsumer extends BaseEntity {
   })
   producerId: string;
 
+  @Column('varchar')
+  type!: string; // consumer | producer
+
   @Column({
     type: 'varchar',
     name: 'transport_id'

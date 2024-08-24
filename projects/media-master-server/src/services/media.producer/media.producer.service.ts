@@ -22,22 +22,22 @@ export class MediaProducerService {
     transportId: string;
     kind: types.MediaKind;
     rtpParameters: types.RtpParameters;
-    appData: any;
-    peerId: string
+    appData?: any;
+    peerId?: string
   }) {
     // 从缓存 transports 中取出 transport
     const transport = this.mediasoupProducerWebRTCTransport.get(
       data.transportId
     );
-    const { kind, rtpParameters, appData } = data;
+    const { kind, rtpParameters } = data;
     // 创建生产者 producer, 传输生产数据（音视频数据）
     const producer = await transport.produce({
       kind,
       rtpParameters,
-      appData
+      appData: data?.appData
     });
 
-    this.producerHandler(producer, data.peerId)
+    if(data?.peerId) this.producerHandler(producer, data?.peerId)
 
     // 缓存生产者 producer
     MediaProducerService.producers.set(producer.id, producer);
@@ -46,39 +46,39 @@ export class MediaProducerService {
     return {
       id: producer.id,
       kind: producer.kind,
-      appData: producer.appData
+      appData: producer?.appData
     };
   }
 
   producerHandler(producer, peerId) {
     // Set Producer events.
-    // producer.on(
-    //   'score',
-    //   (
-    //     score //收到传输质量分数，说明传输进行中
-    //   ) => {
-    //     // console.debug(
-    //     // 	'producer "score" event [producerId:%s, score:%o]',
-    //     // 	producer.id, score);
+    producer.on(
+      'score',
+      (
+        score //收到传输质量分数，说明传输进行中
+      ) => {
+        // console.debug(
+        // 	'producer "score" event [producerId:%s, score:%o]',
+        // 	producer.id, score);
 
-    //     // peer
-    //     //   .notify('producerScore', { producerId: producer.id, score }) // 通知生产者，传输质量分数
-    //     //   .catch(() => {})
+        // peer
+        //   .notify('producerScore', { producerId: producer.id, score }) // 通知生产者，传输质量分数
+        //   .catch(() => {})
         
-    //     // fetchApiMaster({
-    //     //   path: '/message/notify',
-    //     //   method: 'POST',
-    //     //   data: {
-    //     //     method: 'producerScore',
-    //     //     params: {
-    //     //       producerId: producer.id,
-    //     //       score
-    //     //     },
-    //     //     peerId
-    //     //   },
-    //     // });
-    //   }
-    // )
+        fetchApiMaster({
+          path: '/message/notify',
+          method: 'POST',
+          data: {
+            method: 'producerScore',
+            params: {
+              producerId: producer.id,
+              score
+            },
+            peerId
+          },
+        });
+      }
+    )
     
     // 收到视频方向改变事件
     // producer.on(

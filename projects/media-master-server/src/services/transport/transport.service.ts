@@ -25,9 +25,7 @@ export class TransportService {
   public async createProducerTransport(data: {
     roomId: string;
     webRtcTransportOptions: any;
-    peerId: string;
-    userId?: string;
-    metadata?: any;
+    peerId?: string;
   }): Promise<WebRtcTransportData> {
     // 根据 roomId 获取 room
     const room = await this.roomService.getRoom({
@@ -43,7 +41,7 @@ export class TransportService {
       data: {
         routerId: room.routerId,
         webRtcTransportOptions: data.webRtcTransportOptions,
-        peerId: data.peerId
+        peerId: data?.peerId
       },
     });
 
@@ -56,7 +54,6 @@ export class TransportService {
     mediaTransport.workerId = room.worker.id;
     mediaTransport.type = constants.PRODUCER;
     mediaTransport.roomId = room.id;
-    // mediaTransport.userId = data.userId;
 
     /*
      存贮到数据库
@@ -82,7 +79,6 @@ export class TransportService {
   //   routerId: string;
   //   webRtcTransportOptions: any;
   //   peerId: string;
-  //   userId?: string
   // }): Promise<{
   //   id: string;
   //   iceParameters: types.IceParameters;
@@ -115,7 +111,6 @@ export class TransportService {
   //   mediaTransport.workerId = router.worker.id;
   //   mediaTransport.type = constants.CONSUMER;
   //   mediaTransport.roomId = router.roomId;
-  //   mediaTransport.userId = data.userId;
 
   //   /*
   //     存贮到数据库
@@ -140,30 +135,31 @@ export class TransportService {
   public async createConsumerTransport(data: {
     roomId: string;
     webRtcTransportOptions: any;
-    peerId: string;
-    userId?: string
+    peerId?: string;
   }): Promise<WebRtcTransportData> {
-    console.time(`用户${data.peerId} createConsumerTransport函数 this.peerService.getPeer耗时`)
+    const timestrap = new Date().getTime()
+
+    console.time(`${timestrap} createConsumerTransport函数 this.peerService.getPeer耗时`)
     const peer = await this.peerService.getPeer({ 
       peerId: data.peerId
     })
-    console.timeEnd(`用户${data.peerId} createConsumerTransport函数 this.peerService.getPeer耗时`)
+    console.timeEnd(`${timestrap} createConsumerTransport函数 this.peerService.getPeer耗时`)
     if (!peer?.router?.id) {
       console.error('TransportService createConsumerTransport函数 没有找到 peer')
       return
     }
 
-    console.time(`用户${data.peerId} createConsumerTransport函数 this.routerService.get耗时`)
+    console.time(`${timestrap} createConsumerTransport函数 this.routerService.get耗时`)
     const router = await this.routerService.get({
       routerId: peer.router.id
     })
-    console.timeEnd(`用户${data.peerId} createConsumerTransport函数 this.routerService.get耗时`)
+    console.timeEnd(`${timestrap} createConsumerTransport函数 this.routerService.get耗时`)
     if (!router?.id) {
       console.error('this.roomService.getRoom() 没有找到router')
       return
     }
 
-    console.time(`用户${data.peerId} createConsumerTransport函数 fetchApi耗时`)
+    console.time(`${timestrap} createConsumerTransport函数 fetchApi耗时`)
     // 发起 http 访问，访问 consumer 服务器（转发）
     const result = await fetchApi({
       host: router.worker.apiHost,
@@ -173,10 +169,10 @@ export class TransportService {
       data: {
         routerId: router.id,
         webRtcTransportOptions: data.webRtcTransportOptions,
-        peerId: data.peerId
+        peerId: data?.peerId
       },
     });
-    console.timeEnd(`用户${data.peerId} createConsumerTransport函数 fetchApi耗时`)
+    console.timeEnd(`${timestrap} createConsumerTransport函数 fetchApi耗时`)
 
     if(!result) return
 
@@ -187,7 +183,6 @@ export class TransportService {
     mediaTransport.workerId = router.worker.id;
     mediaTransport.type = constants.CONSUMER;
     mediaTransport.roomId = router.roomId;
-    // mediaTransport.userId = data.userId;
 
     /*
       存贮到数据库
@@ -196,9 +191,9 @@ export class TransportService {
       链式调用 getRepository 函数，并传入相关entiry实体类，
       链式调用 save 函数，将 mediaTransport 数据保存至数据库
     */
-    console.time(`用户${data.peerId} createConsumerTransport函数 MediaTransport.getRepository().save耗时`)
+    console.time(`${timestrap} createConsumerTransport函数 MediaTransport.getRepository().save耗时`)
     await MediaTransport.getRepository().save(mediaTransport);
-    console.timeEnd(`用户${data.peerId} createConsumerTransport函数 MediaTransport.getRepository().save耗时`)
+    console.timeEnd(`${timestrap} createConsumerTransport函数 MediaTransport.getRepository().save耗时`)
 
     // worker 根据对应的 wordId 给 transportCount +1
     MediaWorker.getRepository().increment({ id: router.workerId }, 'transportCount', 1);
@@ -333,9 +328,7 @@ export class TransportService {
    *    workerId: '736c417d-c835-4c38-b4a2-23f31e68f31a',
    *    roomId: 'b3f8c86d-c1fb-4a44-a1a5-9f54e89ea3d0',
    *    routerId: '9ca45efc-9350-4e2e-ba00-fd49d3923b11',
-   *    userId: null,
    *    type: 'producer',
-   *    metadata: null,
    *    createDate: 2024-07-12T06:01:58.322Z,
    *    worker: MediaWorker {
    *      id: '736c417d-c835-4c38-b4a2-23f31e68f31a',
@@ -374,7 +367,6 @@ export class TransportService {
   async getProducers(data: { roomId: string }): Promise<{
     items: Array<{
       id: string;
-      userId: string;
       producers: Array<{ id: string; kind: string }>;
     }>;
   }> {
@@ -384,7 +376,6 @@ export class TransportService {
       select: [
         'id',
         'producers',
-        // 'userId'
       ],
       where: {
         roomId: data.roomId,
@@ -397,8 +388,6 @@ export class TransportService {
   // create consumer same host with producer
   async createSameHostConsumer(data: {
     roomId: string;
-    userId?: string;
-    metadata?: any;
   }): Promise<{
     id: string;
     iceParameters: types.IceParameters;
@@ -424,7 +413,6 @@ export class TransportService {
     mediaTransport.workerId = room.worker.id;
     mediaTransport.type = constants.CONSUMER;
     mediaTransport.roomId = room.id;
-    // mediaTransport.userId = data.userId;
 
     await MediaTransport.getRepository().save(mediaTransport);
     MediaWorker.getRepository().increment({ id: room.workerId }, 'transportCount', 1);
@@ -471,9 +459,94 @@ export class TransportService {
     .getRepository()
       .delete({ id: transport.id });
     
-    // 从数据库中，操作 worker 表，记录 transportCount 为 1【TODO 作用是什么？】
+    // 从数据库中，操作 worker 表 transportCount 字段
     await MediaWorker
       .getRepository()
       .decrement({ id: transport.workerId }, 'transportCount', 1);
+  }
+
+  /**
+   * 创建 plain transport
+   * @param data 
+   */
+  public async createPlainTransport(data: {
+    roomId: string;
+    plainTransportOptions: any;
+  }): Promise<WebRtcTransportData> {
+    // 根据 roomId 获取 room
+    const room = await this.roomService.getRoom({
+      roomId: data.roomId,
+    });
+
+    // 发起 http 请求，访问 producer 服务器（转发）
+    const result = await fetchApi({
+      host: room.worker.apiHost,
+      port: room.worker.apiPort,
+      path: '/routers/:routerId/create_plain_transports',
+      method: 'POST',
+      data: {
+        routerId: room.routerId,
+        plainTransportOptions: data.plainTransportOptions,
+      },
+    });
+
+    if(!result) return
+
+    // 创建 entity 实例
+    const mediaTransport = new MediaTransport();
+    mediaTransport.id = result.id;
+    mediaTransport.routerId = room.routerId;
+    mediaTransport.workerId = room.worker.id;
+    mediaTransport.type = constants.PRODUCER;
+    mediaTransport.roomId = room.id;
+
+    /*
+     存贮到数据库
+
+     通过 this.entityManager 获取数据库管理者 manager，
+     链式调用 getRepository 函数，并传入相关entiry实体类，
+     链式调用 save 函数，将 mediaTransport 数据保存至数据库
+     */
+    await MediaTransport.getRepository().save(mediaTransport);
+    
+    return result;
+  }
+
+  /**
+   * 连接 plainTransport
+   * @param data 
+   * @returns {}
+   */
+  public async connectPlainTransport(data: {
+    transportId: string;
+    ip: string;
+    port: number;
+    rtcpport: number;
+  }) {
+    console.log("%c Line:198 🍪 4 连接 transport -- connectPlainTransport data: ", "color:#2eafb0", data);
+    
+    // 从数据库找到对应 transport
+    const transport = await this.get({ transportId: data.transportId });
+    console.log("%c Line:198 🍪 4 连接 transport -- transport: ", "color:#2eafb0", transport);
+
+    if (transport.type === constants.PRODUCER) {
+      const res = await fetchApi({
+        host: transport.worker.apiHost,
+        port: transport.worker.apiPort,
+        path: `/plain_transports/:transportId/connect`,
+        method: 'POST',
+        data: {
+          transportId: transport.id,
+          ip: data.ip,
+          port: data.port,
+          rtcpPort: data.rtcpport,
+        },
+      });
+      console.log("%c Line:198 🍪 4 连接 transport -- connectPlainTransport res == {} ", "color:#2eafb0", res);
+
+      return {};
+    }
+    console.error('Invalid type plain transport');
+    return
   }
 }

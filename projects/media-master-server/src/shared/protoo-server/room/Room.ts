@@ -6,7 +6,7 @@
 import EnhancedEventEmitter from '../utils/EnhancedEventEmitter';
 import Peer from './Peer';
 
-export default class Room extends EnhancedEventEmitter {
+export class Room extends EnhancedEventEmitter {
   /**
    * Room id
    * @type {String}

@@ -1,7 +1,2 @@
-import Room from './room/Room';
-import WebSocketServer from './ws/WebSocketServer';
-
-export default {
-  Room,
-  WebSocketServer,
-};
+export { Room } from './room/Room';
+export { WebSocketServer } from './ws/WebSocketServer';

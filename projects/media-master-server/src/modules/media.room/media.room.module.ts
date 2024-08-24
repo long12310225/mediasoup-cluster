@@ -10,7 +10,7 @@ import { MediaProducerService } from "@/services/media.producer/media.producer.s
 import { MediaConsumerService } from "@/services/media.consumer/media.consumer.service";
 import { MediaDataProducerService } from "@/services/media.dataProdecer/media.dataProducer.service";
 import { MediaDataConsumerService } from "@/services/media.dataConsumer/media.dataConsumer.service";
-
+import { MediaPlainTransportService } from '@/services/media.plain.transport/media.plain.transport.service';
 
 @Module({
   controllers: [MediaRoomController],
@@ -22,7 +22,8 @@ import { MediaDataConsumerService } from "@/services/media.dataConsumer/media.da
     MediaProducerService,
     MediaConsumerService,
     MediaDataProducerService,
-    MediaDataConsumerService
+    MediaDataConsumerService,
+    MediaPlainTransportService
   ],
 })
 export class MediaRoomModule {}

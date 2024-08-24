@@ -24,8 +24,8 @@ export class ProducerService {
     transportId: string;
     kind: any;
     rtpParameters: any;
-    appData: any;
-    peerId: string
+    appData?: any;
+    peerId?: string
   }): Promise<any> {
     // 创建 transport service 实例，并调用实例方法 get，获取 transport
     const transport = await this.transportService.get({
@@ -44,8 +44,8 @@ export class ProducerService {
           transportId: transport.id,
           kind: data.kind,
           rtpParameters: data.rtpParameters,
-          appData: data.appData,
-          peerId: data.peerId
+          appData: data?.appData,
+          peerId: data?.peerId
         },
       });
 

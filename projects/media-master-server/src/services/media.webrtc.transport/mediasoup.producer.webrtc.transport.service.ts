@@ -18,7 +18,7 @@ export class MediasoupProducerWebRTCTransport extends MediasoupWebRTCTransportMa
   async createMediasoupWebRTCTransport(data: {
     routerId: string,
     webRtcTransportOptions: Object,
-    peerId: string
+    peerId?: string
   }) {
     const transport = await this.create(data);
 
@@ -32,7 +32,7 @@ export class MediasoupProducerWebRTCTransport extends MediasoupWebRTCTransportMa
       iceParameters: transport.iceParameters,
       iceCandidates: transport.iceCandidates,
       dtlsParameters: transport.dtlsParameters,
-      sctpParameters: transport.sctpParameters, // TODO 验证什么时候才会有内容
+      sctpParameters: transport.sctpParameters
     }
     // console.log("%c Line:35 🍤 producer transportData", "color:#fca650", transportData);
     return transportData;

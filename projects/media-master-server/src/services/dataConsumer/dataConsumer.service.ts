@@ -21,7 +21,8 @@ export class DataConsumerService {
   public async createConsumeData(data: {
     dataProducerId: string;
     transportId: string;
-    peerId: string;
+    peerId?: string;
+    broadcasterId?: string;
   }) {
     // console.log("%c dataConsumer.service.ts createConsumeData() 开始处 data:", "color:#4fff4B", data);
 
@@ -50,7 +51,8 @@ export class DataConsumerService {
         data: {
           transportId: transport.id,
           dataProducerId: data.dataProducerId,
-          peerId: data.peerId,
+          peerId: data?.peerId,
+          broadcasterId: data?.broadcasterId,
         },
       });
       // console.log("dataConsumer.service.ts createConsumeData() 执行接口 /consumer_data/:transportId/create: 结果result", result);

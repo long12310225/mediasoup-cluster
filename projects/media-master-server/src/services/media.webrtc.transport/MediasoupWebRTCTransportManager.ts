@@ -21,14 +21,14 @@ export class MediasoupWebRTCTransportManager {
   async create(data: {
     routerId: string,
     webRtcTransportOptions: Object,
-    peerId: string
+    peerId?: string
   }): Promise<types.WebRtcTransport> {
+    const timestrap = new Date().getTime()
     // 根据 routerId 从 mediasoupRouterManager 中获取出相关 router
-    console.time(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager this.mediaRouterService.get 耗时`))
+    console.time(chalk.greenBright(`${timestrap} MediasoupWebRTCTransportManager this.mediaRouterService.get 耗时`))
     const router = this.mediaRouterService.get(data.routerId);
-    console.timeEnd(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager this.mediaRouterService.get 耗时`))
+    console.timeEnd(chalk.greenBright(`${timestrap} MediasoupWebRTCTransportManager this.mediaRouterService.get 耗时`))
 
-    console.time(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager env.getEnv 耗时`))
     /* 准备数据 */
     // 最大 incoming 位数
     const maxIncomingBitrate =
@@ -52,7 +52,6 @@ export class MediasoupWebRTCTransportManager {
     const listenIps = JSON.parse(
       env.getEnv('MEDIASOUP_WEBRTC_TRANSPORT_LISTEN_IPS') || '[]'
     );
-    console.timeEnd(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager env.getEnv 耗时`))
 
     // https://mediasoup.org/documentation/v3/mediasoup/api/#router-createWebRtcTransport
     // 创建一个 webRtc 传输对象
@@ -61,26 +60,24 @@ export class MediasoupWebRTCTransportManager {
       initialAvailableOutgoingBitrate,
       maxSctpMessageSize,
       maxIncomingBitrate,
-      enableUdp: true,
-      enableTcp: true,
-      preferUdp: true,
-      // ...data.webRtcTransportOptions
+      // enableUdp: true,
+      // enableTcp: true,
+      // preferUdp: true,
+      ...data.webRtcTransportOptions
     }
     console.log("%c Line:69 🍡 router.createWebRtcTransport params", "color:#7f2b82", params);
-    console.time(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager router.createWebRtcTransport 耗时`))
+    console.time(chalk.greenBright(`${timestrap} MediasoupWebRTCTransportManager router.createWebRtcTransport 耗时`))
     const transport = await router.createWebRtcTransport(params);
-    console.timeEnd(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager router.createWebRtcTransport 耗时`))
+    console.timeEnd(chalk.greenBright(`${timestrap} MediasoupWebRTCTransportManager router.createWebRtcTransport 耗时`))
 
-    console.time(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager this.transportHanlder 耗时`))
-    await this.transportHanlder(transport, data.peerId)
-    console.timeEnd(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager this.transportHanlder 耗时`))
+    console.time(chalk.greenBright(`${timestrap} MediasoupWebRTCTransportManager this.transportHanlder 耗时`))
+    if(data.peerId) await this.transportHanlder(transport, data.peerId)
+    console.timeEnd(chalk.greenBright(`${timestrap} MediasoupWebRTCTransportManager this.transportHanlder 耗时`))
 
     // 给传输对象设置最大位数
     // if (maxIncomingBitrate) {
     //   try {
-    //     console.time(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager transport.setMaxIncomingBitrate 耗时`))
     //     await transport.setMaxIncomingBitrate(maxIncomingBitrate);
-    //     console.timeEnd(chalk.greenBright(`用户${data.peerId} MediasoupWebRTCTransportManager transport.setMaxIncomingBitrate 耗时`))
     //   } catch (error) {
     //     console.warn('WebRtcTransport "maxIncomingBitrate" event [error:%s]', error)
     //   }
@@ -168,11 +165,11 @@ export class MediasoupWebRTCTransportManager {
   async close(data: { transportId: string }) {
     // 从缓存 transports 中取出 transport
     const transport = this.get(data.transportId);
-    // 关闭
-    transport.close();
-    // 从缓存 transports 中删除该 transport
-    (
-      this.constructor as typeof MediasoupWebRTCTransportManager
-    ).transports.delete(data.transportId);
+    if (transport) {
+      // 关闭
+      transport.close();
+      // 从缓存 transports 中删除该 transport
+      (this.constructor as typeof MediasoupWebRTCTransportManager).transports.delete(data.transportId);
+    }
   }
 }

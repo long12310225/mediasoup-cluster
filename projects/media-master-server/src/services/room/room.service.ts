@@ -9,8 +9,8 @@ import { types } from 'mediasoup';
 import { constants } from '@/shared/constants';
 import { WorkerService } from '../worker/worker.service';
 import { fetchApi } from '@/shared/fetch';
-import protoo from '@/shared/protoo-server';
-import { RoomDto } from '@/dto';
+import { Room as ProtooRoom } from '@/shared/protoo-server';
+import { RoomDto, BroadcasterDto } from '@/dto';
 
 @Injectable()
 export class RoomService {
@@ -132,7 +132,7 @@ export class RoomService {
     await MediaRoom.getRepository().save(mediaRoom);
 
     // 创建 protooRoom
-    const protooRoom = new protoo.Room({
+    const protooRoom = new ProtooRoom({
       roomId,
       mediaRoom
     });
@@ -227,7 +227,7 @@ export class RoomService {
 
   /**
    * 获取 rtpCapabilities
-   * @param data 
+   * @param { RoomDto } data 
    * @returns 
    */
   public async getCapabilities(data: RoomDto): Promise<{

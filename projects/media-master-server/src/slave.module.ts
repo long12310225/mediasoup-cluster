@@ -13,6 +13,7 @@ import { MediaDataProducerModule } from './modules/media.dataProdecer/media.data
 import { WorkerService } from './services/worker/worker.service';
 import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { MediaDataConsumerModule } from './modules/media.dataConsumer/media.dataConsumer.module';
+import { MediaPlainTransportModule } from './modules/media.plain.transport/media.plain.transport.module'; 
 import { OpenTelemetryModule } from 'nestjs-otel';
 import { LoggerModule } from './shared/logger/logger.module';
 import { RedisModule } from './shared/redis';
@@ -38,7 +39,8 @@ import { RedisModule } from './shared/redis';
     MediaConsumerModule,
     MediaPipeTransportModule,
     MediaDataProducerModule,
-    MediaDataConsumerModule
+    MediaDataConsumerModule,
+    MediaPlainTransportModule
   ],
   providers: [
     // {

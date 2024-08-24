@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import protoo from '@/shared/protoo-server';
+import {
+  Room as ProtooRoom,
+  WebSocketServer as ProtooWebSocketServer,
+} from '@/shared/protoo-server';
 import env from '@/config/env';
 import * as chalk from 'chalk';
 import { constants } from '@/shared/constants';
@@ -36,9 +39,11 @@ export class WebSocketService {
 
   /**
    * protoo Room instance.
-   * @type {protoo.Room}
+   * @type {ProtooRoom}
    */
-  private _protooRoom;
+  static _protooRoom: ProtooRoom;
+
+  private _mediaRouter;
 
   constructor(
     private readonly roomService: RoomService,
@@ -56,7 +61,7 @@ export class WebSocketService {
    * @param roomId 房间 id
    */
   public initData(roomId: string): void {
-    this._protooRoom = this.roomService.getProtooRoom(roomId)
+    WebSocketService._protooRoom = this.roomService.getProtooRoom(roomId)
     this._roomId = roomId
   }
 
@@ -70,7 +75,7 @@ export class WebSocketService {
     const httpsServer = appInstance.getHttpServer()
 
     // Create the protoo WebSocket server.
-    const protooWebSocketServer = new protoo.WebSocketServer(httpsServer, {
+    const protooWebSocketServer = new ProtooWebSocketServer(httpsServer, {
       maxReceivedFrameSize: env.getEnv('WS_MAX_RECEIVED_FRAME_SIZE'),
       maxReceivedMessageSize: env.getEnv('WS_MAX_RECEIVED_MESSAGE_SIZE'),
       fragmentationThreshold: env.getEnv('WS_FRAGMENTATION_THRESHOLD'),
@@ -113,6 +118,7 @@ export class WebSocketService {
             router = await this.routerService.getOrCreate({
               roomId: room.id
             })
+            this._mediaRouter = router
             console.timeEnd(chalk.yellowBright(`用户:${peerId} this.routerService.getOrCreate 路由耗时`))
           }
 
@@ -142,7 +148,7 @@ export class WebSocketService {
    */
   public async createProtooPeer({ peerId, protooWebSocketTransportFun, serverType, routerId }) {
     // 验证用户是否已经进入过
-    const existingPeer = this._protooRoom.getPeer(peerId);
+    const existingPeer = WebSocketService._protooRoom.getPeer(peerId);
     if (existingPeer) {
       console.warn('createProtooPeer() | 已存在相同peerId用户, closing it [peerId:%s]', peerId);
       existingPeer.close();
@@ -153,7 +159,7 @@ export class WebSocketService {
       // 获取传输对象的
       // 返回 WebSocketTransport 对象（内置：WebSocketConnection实例），用于传递给 Peer 内使用
       const protooWebSocketTransport = protooWebSocketTransportFun();
-      peer = this._protooRoom.createPeer(peerId, protooWebSocketTransport, serverType);
+      peer = WebSocketService._protooRoom.createPeer(peerId, protooWebSocketTransport, serverType);
     } catch (error) {
       console.error('protooRoom.createPeer() failed:%o', error);
     }
@@ -219,9 +225,9 @@ export class WebSocketService {
       // this.routerService.deleteRouter({ peerId })
 
       // 当最后一个人离开房间时才关闭房间
-      // console.log("%c Line:211 🥕🥕🥕 this._protooRoom.roomId", "color:#ea7e5c", this._protooRoom.roomId);
-      // console.log("%c Line:211 🥕🥕🥕 this._protooRoom.peers", "color:#ea7e5c", this._protooRoom.peers);
-      if (this._protooRoom.peers.length === 0) {
+      // console.log("%c Line:211 🥕🥕🥕 WebSocketService._protooRoom.roomId", "color:#ea7e5c", WebSocketService._protooRoom.roomId);
+      // console.log("%c Line:211 🥕🥕🥕 WebSocketService._protooRoom.peers", "color:#ea7e5c", WebSocketService._protooRoom.peers);
+      if (WebSocketService._protooRoom.peers.length === 0) {
         console.info('last Peer in the room left, closing the room [roomId:%s]', this._roomId)
         this.close();
       }
@@ -415,7 +421,7 @@ export class WebSocketService {
             break;
           }
           default: {
-            throw new Error('Invalid type transport');
+            accept('transport 类型有误')
           }
         }
        
@@ -550,7 +556,7 @@ export class WebSocketService {
             break;
           }
           default: {
-            throw new Error('Invalid type transport');
+            accept('transport 类型有误')
           }
         }
 
@@ -744,7 +750,7 @@ export class WebSocketService {
         if (!producer) throw new Error(`producer with id "${producerId}" not found`)
 
         const stats = await this.producerService.getStats({ producerId })
-        console.log("%c Line:615 🍩 stats", "color:#6ec1c2", stats);
+        // console.log("%c Line:615 🍩 stats", "color:#6ec1c2", stats);
 
         accept(stats)
 
@@ -758,7 +764,7 @@ export class WebSocketService {
         if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
 
         const stats = await this.consumerService.getStats({ consumerId })
-        console.log("%c Line:629 🍭 stats", "color:#6ec1c2", stats);
+        // console.log("%c Line:629 🍭 stats", "color:#6ec1c2", stats);
 
         accept(stats)
 
@@ -771,7 +777,7 @@ export class WebSocketService {
         if (!dataProducer) throw new Error(`dataProducer with id "${dataProducerId}" not found`)
 
         const stats = await this.dataProducerService.getStats({ dataProducerId })
-        console.log("%c Line:638 message type 'getDataProducerStats' stats", "color:#33a5ff", stats);
+        // console.log("%c Line:638 message type 'getDataProducerStats' stats", "color:#33a5ff", stats);
 
         accept(stats)
 
@@ -784,7 +790,7 @@ export class WebSocketService {
         if (!dataConsumer) throw new Error(`dataConsumer with id "${dataConsumerId}" not found`)
 
         const stats = await this.dataConsumerService.getStats({ dataConsumerId })
-        console.log("%c Line:652 🍿 stats", "color:#42b983", stats);
+        // console.log("%c Line:652 🍿 stats", "color:#42b983", stats);
 
         accept(stats)
 
@@ -803,7 +809,7 @@ export class WebSocketService {
 
           // 暂停生产者
           const res = await this.consumerService.pause({ consumerId })
-          console.log("%c Line:673 🍢 res", "color:#2eafb0", res);
+          // console.log("%c Line:673 🍢 res", "color:#2eafb0", res);
           
           accept()
         }
@@ -822,7 +828,7 @@ export class WebSocketService {
 
           // 恢复消费者
           const res = await this.consumerService.resume({ consumerId })
-          console.log("%c Line:498 🌭 res", "color:#7f2b82", res);
+          // console.log("%c Line:498 🌭 res", "color:#7f2b82", res);
           
           accept()
         }
@@ -850,7 +856,7 @@ export class WebSocketService {
    * 创建一个 mediasoup Consumer
    * Creates a mediasoup Consumer for the given mediasoup Producer.
    */
-  private async _createConsumer({ consumerPeer, producerPeer, producer }) {
+  async _createConsumer({ consumerPeer, producerPeer, producer }) {
     // console.log("%c Line:888 🥝 _createConsumer producer", "color:#ed9ec7", producer);
     
     // Optimization:
@@ -910,7 +916,7 @@ export class WebSocketService {
           type: consumerData.type,
           producerPaused: consumerData.producerPaused,
         }
-        params.appData = producer.appData
+        params.appData = producer?.appData
         // console.log("%c Line:936 🎂🎂 consumerPeer.request('newConsumer', params): params:", "color:#3f7cff", params);
         await consumerPeer.request('newConsumer', params)
   
@@ -1012,8 +1018,8 @@ export class WebSocketService {
    * @param { { excludePeer: Peer } } 被排除的 peer
    * @returns JoinedPeers
    */
-  private _getJoinedPeers({ excludePeer = { id: ''} } = {}) {
-    return this._protooRoom.peers.filter((peer) => {
+  _getJoinedPeers({ excludePeer = { id: ''} } = {}) {
+    return WebSocketService._protooRoom.peers.filter((peer) => {
       return peer.data.joined && peer.id !== excludePeer.id
     })
   }
@@ -1039,7 +1045,7 @@ export class WebSocketService {
   public close() {
 
     // Close the protoo Room.
-    this._protooRoom.close();
+    WebSocketService._protooRoom.close();
 
     // Close the mediasoup Router.
     this.roomService.close({
@@ -1060,15 +1066,14 @@ export class WebSocketService {
    * 事件监听回推 notify 消息
    */
   public async notifyMain(data) {
-    console.log("Line:1067 🧀 notifyMain 事件监听回推 notify 消息 data ==> ", data);
+    // console.log("Line:1067 🧀 notifyMain 事件监听回推 notify 消息 data ==> ", data);
     
     try {
       const { method, params, peerId } = data;
-      const peer = this._protooRoom.getPeer(peerId);
-
+      const peer = WebSocketService._protooRoom?.getPeer(peerId);
+      // console.log("%c Line:1075 🥟 peer", "color:#33a5ff", peer);
       if (!peer) return;
 
-      console.log("%c Line:1075 🥚 peer.id", "color:#f5ce50", peer.id);
       await peer?.notify(method, params);
 
     } catch (error) {
@@ -1080,8 +1085,9 @@ export class WebSocketService {
    * 操作 peer.data.consumers 合集
    */
   public async peerConsumerHandle(data) {
+    console.log("%c Line:1089 🍢 data", "color:#2eafb0", data);
     const { method, params, peerId } = data;
-    const peer = this._protooRoom.getPeer(peerId);
+    const peer = WebSocketService._protooRoom?.getPeer(peerId);
     if (!peer) return;
 
     switch (method) {
@@ -1096,8 +1102,9 @@ export class WebSocketService {
    * 操作 peer.data.dataConsumers 合集
    */
   public async peerDataConsumerHandle(data) {
+    console.log("%c Line:1107 🍪 data", "color:#ea7e5c", data);
     const { type, params, peerId } = data;
-    const peer = this._protooRoom.getPeer(peerId);
+    const peer = WebSocketService._protooRoom?.getPeer(peerId);
     if (!peer) return;
     
     switch (type) {
@@ -1106,5 +1113,13 @@ export class WebSocketService {
         peer?.data.consumers.delete(params.dataConsumerId)
         break;
     }
+  }
+
+  get roomId() {
+    return this._roomId
+  }
+
+  get mediaRouter() {
+    return this._mediaRouter;
   }
 }

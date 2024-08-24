@@ -1,5 +1,5 @@
 const EventEmitter = require('events').EventEmitter
-const protoo = require('protoo-server')
+const protoo = require('./protoo-server')
 const throttle = require('@sitespeed.io/throttle')
 const Logger = require('./Logger')
 const config = require('../config')

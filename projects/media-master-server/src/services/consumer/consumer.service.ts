@@ -82,7 +82,8 @@ export class ConsumerService {
     transportId: string;
     producerId: string;
     rtpCapabilities: any;
-    peerId: string;
+    peerId?: string;
+    broadcasterId?: string;
   }): Promise<
     /**
      * Consumer
@@ -117,7 +118,8 @@ export class ConsumerService {
         routerId: transport.routerId,
         producerId: data.producerId,
         rtpCapabilities: data.rtpCapabilities,
-        peerId: data.peerId
+        peerId: data?.peerId,
+        broadcasterId: data?.broadcasterId
       }
       // console.log("%c consumer.service.ts createConsumer() 🍩 执行接口 /transports/:transportId/consumer params:", params);
       /**
@@ -140,6 +142,7 @@ export class ConsumerService {
       consumer.id = result.id;
       consumer.producerId = data.producerId;
       consumer.transportId = transport.id;
+      consumer.type = constants.CONSUMER;
 
       // 保存 MediaConsumer 实例到数据库
       await MediaConsumer.getRepository().save(consumer);
@@ -362,6 +365,102 @@ export class ConsumerService {
       return consumer;
     }
     console.error('Consumer not found');
+    return;
+  }
+
+  /**
+   * 创建 broadcaster consumer
+   * @param data 
+   * @returns 
+   */
+  public async createBroadcasterConsumer (data: {
+    transportId: string;
+    producerId: string;
+    rtpCapabilities: any;
+    broadcasterId?: string;
+  }): Promise<
+    /**
+     * Consumer
+     */
+    any
+    > {
+    // 获取 transport
+    const transport = await this.transportService.get({
+      transportId: data.transportId,
+    });
+    console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer transport", "color:#f5ce50", transport);
+    
+    if (transport.type === constants.PRODUCER) {
+      const params = {
+        transportId: transport.id,
+        routerId: transport.routerId,
+        producerId: data.producerId,
+        rtpCapabilities: data.rtpCapabilities,
+        broadcasterId: data?.broadcasterId
+      }
+      // 发起 http，创建 mediasoup consumer
+      const result = await fetchApi({
+        host: transport.worker.apiHost,
+        port: transport.worker.apiPort,
+        path: '/transports/:transportId/consumer',
+        method: 'POST',
+        data: params,
+      });
+      console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer result", "color:#f5ce50", result);
+      
+      if(!result) return
+
+      // 创建 MediaConsumer 实例，存入数据库
+      const consumer = new MediaConsumer();
+      consumer.id = result.id;
+      consumer.producerId = data.producerId;
+      consumer.transportId = transport.id;
+      consumer.type = constants.PRODUCER;
+
+      // 保存 MediaConsumer 实例到数据库
+      await MediaConsumer.getRepository().save(consumer);
+
+      // 返回 mediasoup consumer
+      return result;
+    }
+    console.error('Invalid transport');
+    return;
+  }
+
+  /**
+   * 通过 consumerId 重新开始
+   * @param data
+   * @returns
+   */
+  public async broadcasterConsumerResume(data: { consumerId: string }) {
+
+    // 获取 consumer
+    const consumer = await this.get(data);
+    console.log("%c Line:373 🌰 6 消费 consumer -- broadcasterConsumerResume consumer", "color:#f5ce50", consumer);
+     
+    // 创建 transport service 实例，并调用实例方法 get，获取 transport
+    const transport = await this.transportService.get({
+      transportId: consumer.transportId,
+    });
+    
+    // 如果类型是 consumer
+    if (transport.type === constants.PRODUCER) {
+      // 发起 http
+      const res = await fetchApi({
+        host: transport.worker.apiHost,
+        port: transport.worker.apiPort,
+        path: '/consumers/:consumerId/resume',
+        method: 'POST',
+        data: {
+          consumerId: consumer.id
+        },
+      });
+      console.log("%c Line:373 🌰 6 消费 consumer -- broadcasterConsumerResume res", "color:#f5ce50", res);
+     
+      // 返回空对象
+      return {};
+    }
+    console.error('Invalid transport');
     return;
   }
   

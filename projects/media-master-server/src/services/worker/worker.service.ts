@@ -69,7 +69,8 @@ export class WorkerService {
     if (worker) {
       return worker;
     }
-    throw new Error('Worker not found');
+    console.error('Worker not found')
+    return
   }
 
   async get(data: { workerId: string }) {
@@ -79,6 +80,7 @@ export class WorkerService {
     if (worker) {
       return worker;
     }
-    throw new Error('Worker not found');
+    console.error('Worker not found')
+    return
   }
 }

@@ -21,7 +21,8 @@ export class MediaDataConsumerService {
   async createConsumeData(data: {
     transportId: string;
     dataProducerId: string;
-    peerId: string;
+    peerId?: string;
+    broadcasterId?: string;
   }) {
     // console.log("%c media.dataConsumer.service createConsumeData data:", "color:#42b983", data);
 
@@ -49,7 +50,11 @@ export class MediaDataConsumerService {
       return
     }
 
-    this.dataConsumerHandler(dataConsumer, data.peerId);
+    if (data?.peerId) {
+      this.handleDataConsumer(dataConsumer, data?.peerId);
+    } else if (data?.broadcasterId) {
+      this.handleBroadcastDataConsumer(dataConsumer, data?.broadcasterId)
+    }
 
     // 缓存 dataConsumer
     MediaDataConsumerService.dataConsumers.set(dataConsumer.id, dataConsumer);
@@ -73,7 +78,7 @@ export class MediaDataConsumerService {
    * @param dataConsumer
    * @param peerId
    */
-  dataConsumerHandler(dataConsumer, peerId) {
+  handleDataConsumer(dataConsumer, peerId) {
     // Set DataConsumer events.
     dataConsumer.on('transportclose', () => {
       // Remove from its map.
@@ -117,6 +122,38 @@ export class MediaDataConsumerService {
             dataConsumerId: dataConsumer.id,
           },
           peerId,
+        },
+      });
+    });
+  }
+
+  handleBroadcastDataConsumer(dataConsumer, broadcasterId) {
+    dataConsumer.on('transportclose', () => {
+      // Remove from its map.
+      fetchApiMaster({
+        path: '/broadcast/dataConsumer/handle',
+        method: 'POST',
+        data: {
+          type: 'transportclose',
+          params: {
+            dataConsumerId: dataConsumer.id,
+          },
+          broadcasterId,
+        },
+      });
+    });
+
+    dataConsumer.on('dataproducerclose', () => {
+      // Remove from its map.
+      fetchApiMaster({
+        path: '/broadcast/dataConsumer/handle',
+        method: 'POST',
+        data: {
+          type: 'dataproducerclose',
+          params: {
+            dataConsumerId: dataConsumer.id,
+          },
+          broadcasterId,
         },
       });
     });
