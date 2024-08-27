@@ -12,10 +12,48 @@ const os = require('os')
 
 module.exports = {
   // Listening hostname (just for `gulp live` task).
-  domain: process.env.DOMAIN || '10.2.110.222',
+  domain: process.env.DOMAIN || '10.2.30.20',
+  nacos  :{
+		tokenServer  :{
+			hostname : process.env.NACOS_TOKEN_HOST || 'fatsaasnacos.bndxqc.com',
+			path : process.env.NACOS_TOKEN_PATH || '/nacos/v1/auth/users/login?username=tmp&password=VEjO9F4OoYeE',
+			method : process.env.NACOS_TOKEN_METHOD || 'POST',
+		},
+		client  :{
+			serverList : process.env.NACOS_CLIENT_SERVERLIST || 'fatsaasnacos.bndxqc.com:30848',
+			namespace : process.env.NACOS_CLIENT_NAMESPACE || 'saas-video',
+			username : process.env.NACOS_CLIENT_ACCESSKEY || 'tmp',
+			password : process.env.NACOS_CLIENT_SECRETKEY || 'VEjO9F4OoYeE',
+		},
+		register: {
+			serverName: process.env.NACOS_REGISTER_SERVERNAME || 'bonade-saas-mediasoup',
+			group : process.env.NACOS_REGISTER_GROUP || 'DEFAULT_GROUP',
+			ip        : process.env.NACOS_REGISTER_IP || '10.2.30.20',
+			port      : process.env.NACOS_REGISTER_PORT || 4443,
+		}
+	},
+  // nacos  :{
+	// 	tokenServer  :{
+	// 		hostname : process.env.NACOS_TOKEN_HOST || 'dev2saasnacosconsole.bndxqc.com',
+	// 		path : process.env.NACOS_TOKEN_PATH || '/nacos/v1/auth/users/login?username=saas-unionDev&password=saas-unionDev',
+	// 		method : process.env.NACOS_TOKEN_METHOD || 'POST',
+	// 	},
+	// 	client  :{
+	// 		serverList : process.env.NACOS_CLIENT_SERVERLIST || 'dev2saasnacos.bndxqc.com:8848',
+	// 		namespace : process.env.NACOS_CLIENT_NAMESPACE || 'saas-video',
+	// 		username : process.env.NACOS_CLIENT_ACCESSKEY || 'saas-video',
+	// 		password : process.env.NACOS_CLIENT_SECRETKEY || 'saas-video',
+	// 	},
+	// 	register: {
+	// 		serverName: process.env.NACOS_REGISTER_SERVERNAME || 'bonade-saas-mediasoup',
+	// 		group : process.env.NACOS_REGISTER_GROUP || 'DEFAULT_GROUP',
+	// 		ip        : process.env.NACOS_REGISTER_IP || '10.2.30.27',
+	// 		port      : process.env.NACOS_REGISTER_PORT || 4443,
+	// 	}
+	// },
   // Signaling settings (protoo WebSocket server and HTTP API server).
   https: {
-    listenIp: '10.2.110.222',
+    listenIp: process.env.MEDIASOUP_HTTP_LISTEN_IP || '10.2.30.20',
     // NOTE: Don't change listenPort (client app assumes 4443).
     listenPort: process.env.PROTOO_LISTEN_PORT || 4443,
     // NOTE: Set your own valid certificate files.
@@ -93,7 +131,7 @@ module.exports = {
     webRtcTransportOptions: {
       listenIps: [
         {
-          ip: process.env.MEDIASOUP_LISTEN_IP || '10.2.110.156',
+          ip: process.env.MEDIASOUP_LISTEN_IP || '10.2.30.20',
           announcedIp: process.env.MEDIASOUP_ANNOUNCED_IP,
         },
       ],
@@ -108,7 +146,7 @@ module.exports = {
     // See https://mediasoup.org/documentation/v3/mediasoup/api/#PlainTransportOptions
     plainTransportOptions: {
       listenIp: {
-        ip: process.env.MEDIASOUP_LISTEN_IP || 'localhost',
+        ip: process.env.MEDIASOUP_LISTEN_IP || '10.2.30.20',
         announcedIp: process.env.MEDIASOUP_ANNOUNCED_IP,
       },
       maxSctpMessageSize: 262144,

@@ -1,4 +1,4 @@
-const protoo = require('../lib/protoo-server')
+const protoo = require('../lib/protoo-server/lib')
 const url = require('url')
 const { AwaitQueue } = require('awaitqueue');
 const Room = require('../lib/Room')

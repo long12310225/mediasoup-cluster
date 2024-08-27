@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-SERVER_URL=https://10.2.30.27:4443
+SERVER_URL=https://10.2.30.20:4443
 ROOM_ID=0000
-PRODUCER_ID=4ca42193-56e3-4c69-88bb-9fe4035b301b
+PRODUCER_ID=ffc889ea-4788-485c-aa55-fe52052b607d
 function show_usage()
 {
  echo
@@ -62,10 +62,10 @@ set -e
 
 BROADCASTER_ID=$(LC_CTYPE=C tr -dc A-Za-z0-9 < /dev/urandom | fold -w ${1:-32} | head -n 1)
 HTTPIE_COMMAND="http --check-status --verify=no"
-AUDIO_SSRC=936272579
+AUDIO_SSRC=2614530593
 AUDIO_PT=111
-VIDEO_SSRC=3838163518
-VIDEO_PT=101
+# VIDEO_SSRC=3838163518
+# VIDEO_PT=101
 
 #
 # Verify that a room with id ROOM_ID does exist by sending a simlpe HTTP GET. If
@@ -128,7 +128,7 @@ echo ">>>PlainTransport Connect"
 
 ${HTTPIE_COMMAND} -v \
  POST ${SERVER_URL}/rooms/${ROOM_ID}/broadcasters/${BROADCASTER_ID}/transports/${audioTransportId}/plainconnect \
- ip="127.0.0.1" \
+ ip="10.2.30.20" \
  port:=33334 \
  rtcpport:=33335 \
  > /dev/null

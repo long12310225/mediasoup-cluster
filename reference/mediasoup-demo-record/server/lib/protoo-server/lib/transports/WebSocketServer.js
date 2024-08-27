@@ -57,7 +57,7 @@ class WebSocketServer extends EnhancedEventEmitter
 
 		// NOTE: To avoid https://github.com/theturtle32/WebSocket-Node/issues/351
 		// in Node 10.
-		request.httpRequest.socket.on('error', () => {});
+		// request.httpRequest.socket.on('error', () => {});
 
 		// Validate WebSocket sub-protocol.
 		if (request.requestedProtocols.indexOf(WS_SUBPROTOCOL) === -1)

@@ -2,13 +2,13 @@ const { NacosNamingClient } = require('nacos')
 const https = require('https');
 const Logger = require('../lib/Logger')
 const logger = new Logger()
-
+const config = require('../config');
 module.exports = {
   loginnacos: async function () {
     const options = {
-      hostname: 'dev2saasnacosconsole.bndxqc.com',
-      path: '/nacos/v1/auth/users/login?username=saas-unionDev&password=saas-unionDev',
-      method: 'POST',
+      hostname : config.nacos.tokenServer.hostname,
+		  path : config.nacos.tokenServer.path,
+		  method : config.nacos.tokenServer.method,
     }
 
     // 发起POST请求
@@ -33,20 +33,13 @@ module.exports = {
 
         const nacosclient = new NacosNamingClient({
           logger,
-          serverList: 'dev2saasnacos.bndxqc.com:8848',
-          namespace: 'saas-unionDev',
-          username: 'saas-unionDev',
-          password: 'saas-unionDev',
+          serverList : config.nacos.client.serverList,
+          namespace : config.nacos.client.namespace,
+				  username : config.nacos.client.username,
+				  password : config.nacos.client.password,
           accessKey: accessToken,
         })
-        nacosclient.registerInstance(
-          'bonade-saas-mediasoup',
-          {
-            ip: '10.2.110.156',
-            port: 4443,
-          },
-          'DEFAULT_GROUP'
-        )
+        nacosclient.registerInstance(config.nacos.register.serverName, { ip: config.nacos.register.ip, port: config.nacos.register.port }, config.nacos.register.group);
       })
     })
 

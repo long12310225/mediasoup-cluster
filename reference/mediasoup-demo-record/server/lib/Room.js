@@ -1,5 +1,5 @@
 const EventEmitter = require('events').EventEmitter
-const protoo = require('./protoo-server')
+const protoo = require('./protoo-server/lib')
 const throttle = require('@sitespeed.io/throttle')
 const Logger = require('./Logger')
 const config = require('../config')
@@ -590,7 +590,13 @@ class Room extends EventEmitter {
     const consumer = broadcaster.data.consumers.get(consumeId)
     logger.info('get consumer success consumerid %s', String(consumeId))
     setTimeout(async () => {
-      await consumer.resume()
+      try {
+        if(consumer && consumer.resume){
+          await consumer.resume()
+        }
+      } catch (error) {
+        console.log(error)
+      }
     }, 1000)
     return {
       id: consumeId,
@@ -1081,10 +1087,10 @@ class Room extends EventEmitter {
         const { producerId } = request.data
         const producer = peer.data.producers.get(producerId)
 
-        if (!producer) throw new Error(`producer with id "${producerId}" not found`)
-
-        await producer.resume() //恢复生产者
-
+        //if (!producer) throw new Error(`producer with id "${producerId}" not found`)
+        if(producer&&producer.resume){
+          await producer.resume() //恢复生产者
+        }
         accept()
 
         break
@@ -1129,12 +1135,17 @@ class Room extends EventEmitter {
         const { consumerId } = request.data
         const consumer = peer.data.consumers.get(consumerId)
 
-        if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
+        //if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
 
-        await consumer.resume()
+        try {
+          if(consumer && consumer.resume){
+            await consumer.resume()
+          }
+        } catch (error) {
+          console.log(error)
+        }
 
         accept()
-
         break
       }
       case 'resumeConsumers': {
@@ -1147,9 +1158,15 @@ class Room extends EventEmitter {
         for (const consumerId of consumerIds) {
           const consumer = peer.data.consumers.get(consumerId)
 
-          if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
+          //if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
 
-          await consumer.resume()
+          try {
+            if(consumer && consumer.resume){
+              await consumer.resume()
+            }
+          } catch (error) {
+            console.log(error)
+          }
           accept()
         }
         break

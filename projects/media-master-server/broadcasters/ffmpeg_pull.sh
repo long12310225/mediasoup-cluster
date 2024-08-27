@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 source ./common.sh
 
-SERVER_URL=https://10.2.110.222:4443
+SERVER_URL=https://10.2.30.20:4443
 ROOM_ID=0000
 MEDIA_FILE=./output.webm
 BROADCASTER_ID=$(LC_CTYPE=C tr -dc A-Za-z0-9 < /dev/urandom | fold -w ${1:-32} | head -n 1)
 HTTPIE_COMMAND="http --check-status --verify=no"
-PRODUCER_ID=60cadbff-7dca-46e7-984c-60c949318876
-VIDEO_SSRC=4039824658
+PRODUCER_ID=67bada48-ac27-4f27-9648-1722b0da9069
+VIDEO_SSRC=531448731
 VIDEO_PT=96
 #AUDIO_SSRC=4253847681
 #AUDIO_PT=111

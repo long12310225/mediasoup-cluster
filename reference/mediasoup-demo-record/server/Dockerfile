@@ -12,6 +12,7 @@ COPY package.json .
 RUN npm install
 COPY server.js .
 COPY config.js .
+COPY src ./src
 COPY lib lib
 COPY certs certs
 
