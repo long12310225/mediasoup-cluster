@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { types } from 'mediasoup';
-import { MediasoupConsumerWebRTCTransport } from '../media.webrtc.transport/mediasoup.consumer.webrtc.transport.service';
+import { ConsumerMediaWebRTCTransport } from '../media.webrtc.transport/consumer.media.webrtc.transport.service';
 import { MediaRouterService } from '../media.router/media.router.service';
-import { fetchApiMaster } from '@/shared/fetch';
+import { fetchApiMaster } from '@/common/fetch';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class MediaDataConsumerService {
@@ -10,9 +11,12 @@ export class MediaDataConsumerService {
   static dataConsumers = new Map<string, types.DataConsumer>();
 
   constructor(
-    private readonly mediasoupConsumerWebRTCTransport: MediasoupConsumerWebRTCTransport,
+    private readonly logger: PinoLogger,
+    private readonly mediasoupConsumerWebRTCTransport: ConsumerMediaWebRTCTransport,
     private readonly mediaRouterService: MediaRouterService,
-  ) {}
+  ) {
+    this.logger.setContext(MediaDataConsumerService.name)
+  }
 
   /**
    * 创建 dataConsumer
@@ -24,53 +28,48 @@ export class MediaDataConsumerService {
     peerId?: string;
     broadcasterId?: string;
   }) {
-    // console.log("%c media.dataConsumer.service createConsumeData data:", "color:#42b983", data);
-
-    const transport = this.mediasoupConsumerWebRTCTransport.get(data.transportId);
-    // console.log("%c Line:28 🍐 输出所有transport MediasoupConsumerWebRTCTransport.transports", "color:#e41a6a", MediasoupConsumerWebRTCTransport.transports);
-    // 看 transport 是否带有 appData 的 consuming 为 true 的数据
-    // console.log("%c 🌶 media.dataConsumer.service createConsumeData transport:", "color:#42b983", transport);
-
-    if (!transport) {
-      console.warn('createConsumeData() | Transport for consuming not found');
-      return;
-    }
-
-    let dataConsumer
-    // https://mediasoup.org/documentation/v3/mediasoup/api/#DataConsumer
     try {
+      const transport = this.mediasoupConsumerWebRTCTransport.get(data.transportId);
+      // 看 transport 是否带有 appData 的 consuming 为 true 的数据
+  
+      if (!transport) {
+        console.warn('createConsumeData() | Transport for consuming not found');
+        return;
+      }
+  
+      // https://mediasoup.org/documentation/v3/mediasoup/api/#DataConsumer
       // 消费别人的 transport.produceData 中 appData 的 consuming 为 true
-      dataConsumer = await transport.consumeData({
+      const dataConsumer = await transport.consumeData({
         dataProducerId: data.dataProducerId,
         paused: true, // 先暂停
       });
-      // console.log("%c Line:45 🥤 dataConsumer", "color:#465975", dataConsumer);
-    } catch (error) {
-      console.log("%c Line:43 🍫🍫🍫 error", "color:#b03734", error);
-      return
+  
+      if (!dataConsumer) return
+  
+      if (data?.peerId) {
+        this.handleDataConsumer(dataConsumer, data?.peerId);
+      } else if (data?.broadcasterId) {
+        this.handleBroadcastDataConsumer(dataConsumer, data?.broadcasterId)
+      }
+  
+      // 缓存 dataConsumer
+      MediaDataConsumerService.dataConsumers.set(dataConsumer.id, dataConsumer);
+  
+      // 返回 dataConsumer 信息
+      const res = {
+        id: dataConsumer.id,
+        type: dataConsumer.type,
+        dataProducerId: dataConsumer.dataProducerId,
+        sctpStreamParameters: dataConsumer.sctpStreamParameters,
+        label: dataConsumer.label,
+        protocol: dataConsumer.protocol,
+        appData: dataConsumer.appData,
+      }
+      return res;
+      
+    } catch (e) {
+      this.logger.error(e)
     }
-
-    if (data?.peerId) {
-      this.handleDataConsumer(dataConsumer, data?.peerId);
-    } else if (data?.broadcasterId) {
-      this.handleBroadcastDataConsumer(dataConsumer, data?.broadcasterId)
-    }
-
-    // 缓存 dataConsumer
-    MediaDataConsumerService.dataConsumers.set(dataConsumer.id, dataConsumer);
-
-    // 返回 dataConsumer 信息
-    const res = {
-      id: dataConsumer.id,
-      type: dataConsumer.type,
-      dataProducerId: dataConsumer.dataProducerId,
-      sctpStreamParameters: dataConsumer.sctpStreamParameters,
-      label: dataConsumer.label,
-      protocol: dataConsumer.protocol,
-      appData: dataConsumer.appData,
-    }
-    // console.log("%c Line:68 🍕 res", "color:#465975", res);
-    return res;
   }
 
   /**
@@ -165,11 +164,17 @@ export class MediaDataConsumerService {
    * @returns
    */
   async getStats(data: { dataConsumerId: string }) {
-    // 从缓存中取出 dataConsumer
-    const dataConsumer = this.get(data);
-    // 获取 dataConsumer 状态
-    const res = await dataConsumer.getStats();
-    return res;
+    try {
+      // 从缓存中取出 dataConsumer
+      const dataConsumer = this.get(data);
+      if (!dataConsumer) return 
+      
+      // 获取 dataConsumer 状态
+      const res = await dataConsumer.getStats();
+      return res;
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -178,12 +183,18 @@ export class MediaDataConsumerService {
    * @returns 
    */
   async pause(data: { dataConsumerId: string }) {
-    // 从缓存中取出 dataConsumer
-    const dataConsumer = this.get(data);
-    // 调用 dataConsumer 的 pause 方法，暂停媒体流
-    await dataConsumer.pause();
-    // 返回空对象
-    return {};
+    try {
+      // 从缓存中取出 dataConsumer
+      const dataConsumer = this.get(data);
+      if (!dataConsumer) return 
+  
+      // 调用 dataConsumer 的 pause 方法，暂停媒体流
+      await dataConsumer.pause();
+      // 返回空对象
+      return {};
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -192,12 +203,18 @@ export class MediaDataConsumerService {
    * @returns 
    */
   async resume(data: { dataConsumerId: string }) {
-    // 从缓存中取出 dataConsumer
-    const dataConsumer = this.get(data);
-    // 取消暂停服务器端消费者
-    await dataConsumer.resume()
-    // 返回空对象
-    return {};
+    try {
+      // 从缓存中取出 dataConsumer
+      const dataConsumer = this.get(data);
+      if (!dataConsumer) return 
+      
+      // 取消暂停服务器端消费者
+      await dataConsumer.resume()
+      // 返回空对象
+      return {};
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -208,11 +225,11 @@ export class MediaDataConsumerService {
   get(data: { dataConsumerId: string }) {
     // 从缓存中取出 dataConsumer
     const dataConsumer = MediaDataConsumerService.dataConsumers.get(data.dataConsumerId);
-    if (dataConsumer) {
-      return dataConsumer;
+    if (!dataConsumer) {
+      this.logger.error('dataConsumer not found');
+      return
     }
-    console.error('dataConsumer not found');
-    return;
+    return dataConsumer;
   }
 
   getDataConsumers(data) {

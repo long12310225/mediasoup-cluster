@@ -8,7 +8,7 @@ import {
   Body,
   Param,
 } from '@nestjs/common';
-import { Params } from '@/shared/decorators';
+import { Params } from '@/common/decorators';
 import { MediaProducerService } from '@/services/media.producer/media.producer.service';
 
 @Controller()

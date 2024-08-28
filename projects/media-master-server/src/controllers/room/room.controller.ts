@@ -10,7 +10,7 @@ import {
   HttpCode
 } from '@nestjs/common';
 import { RoomService } from '../../services/room/room.service';
-import { Params } from '@/shared/decorators';
+import { Params } from '@/common/decorators';
 import { v4 as uuidv4 } from 'uuid';
 
 @Controller()

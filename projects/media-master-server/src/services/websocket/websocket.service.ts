@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import {
   Room as ProtooRoom,
   WebSocketServer as ProtooWebSocketServer,
-} from '@/shared/protoo-server';
+} from '@/common/libs/protoo-server';
 import env from '@/config/env';
 import * as chalk from 'chalk';
-import { constants } from '@/shared/constants';
+import { constants } from '@/common/constants';
 import { MediaTransport } from '@/dao/transport/media.transport.do';
 import { RoomService } from '../room/room.service';
 import { RouterService } from '../router/router.service';
@@ -20,6 +20,7 @@ import * as url from 'url';
 import { AwaitQueue } from 'awaitqueue';
 import { v4 as uuidv4 } from 'uuid';
 import { WebRtcTransportData } from '@/types';
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class WebSocketService {
@@ -46,6 +47,8 @@ export class WebSocketService {
   private _mediaRouter;
 
   constructor(
+    @InjectPinoLogger(WebSocketService.name)
+    private readonly logger: PinoLogger,
     private readonly roomService: RoomService,
     private readonly routerService: RouterService,
     private readonly transportService: TransportService,
@@ -71,6 +74,9 @@ export class WebSocketService {
   public runWSServer(appInstance: NestFastifyApplication) { 
     console.info(chalk.green(`App running at:
       - wss://${env.getEnv('SERVER_IP_MAIN')}:${env.getEnv('SERVER_PORT_MAIN')}/`));
+    
+    // 演示
+    // this.logger.info({ foo: 'bar' }, 'baz %s', 'qux');
 
     const httpsServer = appInstance.getHttpServer()
 
@@ -132,7 +138,7 @@ export class WebSocketService {
           })
           
         }).catch((error) => {
-          console.error('room creation or room joining failed:%o', error);
+          this.logger.error(error);
           reject(error);
         });
       }
@@ -161,7 +167,7 @@ export class WebSocketService {
       const protooWebSocketTransport = protooWebSocketTransportFun();
       peer = WebSocketService._protooRoom.createPeer(peerId, protooWebSocketTransport, serverType);
     } catch (error) {
-      console.error('protooRoom.createPeer() failed:%o', error);
+      this.logger.error(error)
     }
 
     // 使用 peer.data 缓存 mediasoup 相关的内容
@@ -190,7 +196,7 @@ export class WebSocketService {
 
       this._handleProtooRequest(peer, request, accept, reject).catch(
         (error) => {
-          console.error('request failed:%o', error);
+          this.logger.error(error)
           reject(error);
         },
       );
@@ -284,7 +290,7 @@ export class WebSocketService {
             mediasoupTransport = await this.transportService.createConsumerTransport(data);
             console.timeEnd(`用户${peer.id} 信令接口: createWebRtcTransport创建consumer createConsumerTransport耗时`)
           } else {
-            console.error('请检查参数: producing、consuming')
+            this.logger.error('请检查参数: producing、consuming')
             accept('请检查参数: producing、consuming')
           }
         } catch (error) {
@@ -1077,7 +1083,7 @@ export class WebSocketService {
       await peer?.notify(method, params);
 
     } catch (error) {
-      console.error('peer.notify error ==> "%s"', error);
+      this.logger.error(error)
     }
   }
 

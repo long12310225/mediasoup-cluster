@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 source ./common.sh
 
-SERVER_URL=https://10.2.30.20:4443
+SERVER_URL=https://10.2.110.222:4443
 ROOM_ID=0000
 MEDIA_FILE=./output.webm
 BROADCASTER_ID=$(LC_CTYPE=C tr -dc A-Za-z0-9 < /dev/urandom | fold -w ${1:-32} | head -n 1)

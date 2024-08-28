@@ -9,7 +9,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { ProducerService } from '@/services/producer/producer.service';
-import { Params } from '@/shared/decorators';
+import { Params } from '@/common/decorators';
 
 @Controller()
 export class ProducerController {

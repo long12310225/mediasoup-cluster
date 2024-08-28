@@ -1,15 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { types } from 'mediasoup';
-import { MediasoupProducerWebRTCTransport } from '../media.webrtc.transport/mediasoup.producer.webrtc.transport.service';
-import { fetchApiMaster } from '@/shared/fetch';
+import { ProducerMediaWebRTCTransport } from '../media.webrtc.transport/producer.media.webrtc.transport.service';
+import { fetchApiMaster } from '@/common/fetch';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class MediaDataProducerService {
   static dataProducers = new Map<string, types.DataProducer>();
 
   constructor(
-    private readonly mediasoupProducerWebRTCTransport: MediasoupProducerWebRTCTransport,
-  ) {}
+    private readonly logger: PinoLogger,
+    private readonly mediasoupProducerWebRTCTransport: ProducerMediaWebRTCTransport,
+  ) {
+    this.logger.setContext(MediaDataProducerService.name)
+  }
 
   /**
    * 创建 dataProducer
@@ -23,40 +27,45 @@ export class MediaDataProducerService {
     appData: any;
     broadcasterId?: string
   }) {
-    const transport = this.mediasoupProducerWebRTCTransport.get(
-      data.transportId,
-    );
-
-    if (!transport) {
-      console.warn('createProduceData() | Transport for consuming not found');
-      return;
+    try {
+      const transport = this.mediasoupProducerWebRTCTransport.get(
+        data.transportId,
+      );
+  
+      if (!transport) {
+        this.logger.error('createProduceData() | Transport for consuming not found');
+        return;
+      }
+  
+      // https://mediasoup.org/documentation/v3/mediasoup/api/#DataProducer
+      const dataProducer = await transport.produceData({
+        label: data.label,
+        protocol: data.protocol,
+        sctpStreamParameters: data.sctpStreamParameters,
+        appData: data.appData,
+      });
+      if(!dataProducer) return
+  
+      if (data?.broadcasterId) {
+        this.handleBroadcastDataProducer(dataProducer, data?.broadcasterId)
+      }
+  
+      // 缓存 producer
+      MediaDataProducerService.dataProducers.set(dataProducer.id, dataProducer);
+  
+      // 返回 dataProducer 信息
+      return {
+        id: dataProducer.id,
+        closed: dataProducer.closed,
+        type: dataProducer.type,
+        sctpStreamParameters: dataProducer.sctpStreamParameters,
+        label: dataProducer.label,
+        protocol: dataProducer.protocol,
+        appData: dataProducer.appData,
+      };
+    } catch (e) {
+      this.logger.error(e)
     }
-
-    // https://mediasoup.org/documentation/v3/mediasoup/api/#DataProducer
-    const dataProducer = await transport.produceData({
-      label: data.label,
-      protocol: data.protocol,
-      sctpStreamParameters: data.sctpStreamParameters,
-      appData: data.appData,
-    });
-
-    if (data?.broadcasterId) {
-      this.handleBroadcastDataProducer(dataProducer, data?.broadcasterId)
-    }
-
-    // 缓存 producer
-    MediaDataProducerService.dataProducers.set(dataProducer.id, dataProducer);
-
-    // 返回 dataProducer 信息
-    return {
-      id: dataProducer.id,
-      closed: dataProducer.closed,
-      type: dataProducer.type,
-      sctpStreamParameters: dataProducer.sctpStreamParameters,
-      label: dataProducer.label,
-      protocol: dataProducer.protocol,
-      appData: dataProducer.appData,
-    };
   }
 
   handleBroadcastDataProducer(dataProducer, broadcasterId) {
@@ -85,11 +94,11 @@ export class MediaDataProducerService {
     const dataProducer = MediaDataProducerService.dataProducers.get(
       data.dataProducerId,
     );
-    if (dataProducer) {
-      return dataProducer;
+    if (!dataProducer) {
+      this.logger.error('dataProducer not found');
+      return
     }
-    console.error('dataProducer not found');
-    return;
+    return dataProducer;
   }
 
   /**
@@ -98,10 +107,16 @@ export class MediaDataProducerService {
    * @returns
    */
   async getStats(data: { dataProducerId: string }) {
-    // 获取 dataProducer
-    const dataProducer = this.get(data);
-    const stats = await dataProducer.getStats();
-    return stats;
+    try {
+      // 获取 dataProducer
+      const dataProducer = this.get(data);
+      if (!dataProducer) return 
+  
+      const stats = await dataProducer.getStats();
+      return stats;
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   getDataProducers(data) {

@@ -8,7 +8,7 @@ import {
   Body,
   Param,
 } from '@nestjs/common';
-import { Params } from '@/shared/decorators';
+import { Params } from '@/common/decorators';
 import { WebSocketService } from '@/services/websocket/websocket.service';
 
 @Controller()

@@ -15,8 +15,8 @@ import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { MediaDataConsumerModule } from './modules/media.dataConsumer/media.dataConsumer.module';
 import { MediaPlainTransportModule } from './modules/media.plain.transport/media.plain.transport.module'; 
 import { OpenTelemetryModule } from 'nestjs-otel';
-import { LoggerModule } from './shared/logger/logger.module';
-import { RedisModule } from './shared/redis';
+import { LoggerModule } from './shared/modules/logger/logger.module';
+import { RedisModule } from './shared/modules/redis';
 
 @Module({
   imports: [

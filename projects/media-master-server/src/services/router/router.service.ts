@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository, getEntityManagerToken } from '@nestjs/typeorm';
 import { types } from 'mediasoup';
-import { fetchApi } from '@/shared/fetch'
-import { constants } from '@/shared/constants';
+import { fetchApi } from '@/common/fetch'
+import { constants } from '@/common/constants';
 import { MediaRouter } from '@/dao/router/media.router.do';
 import { WorkerService } from '../worker/worker.service';
 import { RoomService } from '../room/room.service';
 import { EntityManager } from 'typeorm';
-import { RedisService, MEDIA_ROUTER } from '@/shared/redis';
+import { RedisService, MEDIA_ROUTER } from '@/shared/modules/redis';
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class RouterService {
@@ -15,6 +16,8 @@ export class RouterService {
   // static producerList = new Map<string, any>();
 
   constructor(
+    @InjectPinoLogger(RouterService.name)
+    private readonly logger: PinoLogger,
     private readonly workerService: WorkerService,
     private readonly roomService: RoomService,
     private readonly entityManager: EntityManager,
@@ -97,6 +100,8 @@ export class RouterService {
       constants.CONSUMER
     );
 
+    if(!worker) return
+
     // 发送 POST 请求 consumer 服务器（转发）
     const result = await fetchApi({
       host: worker.apiHost,
@@ -145,8 +150,7 @@ export class RouterService {
           routerId: result.routerId
         },
       });
-      console.error(e)
-      console.error('Room not found');
+      this.logger.error(e);
       return;
     }
     
@@ -172,11 +176,11 @@ export class RouterService {
         id: data.routerId
       },
     });
-    if (router) {
-      return router;
+    if (!router) {
+      this.logger.error('router not found');
+      return;
     }
-    console.error('Router not found');
-    return;
+    return router;
   }
 
   /**
@@ -191,11 +195,11 @@ export class RouterService {
         roomId: data.roomId
       },
     });
-    if (router) {
-      return router;
+    if (!router) {
+      this.logger.error('router not found');
+      return;
     }
-    console.error('Router not found');
-    return;
+    return router;
   }
 
   /**
@@ -352,6 +356,8 @@ export class RouterService {
         const worker = await this.workerService.get({
           workerId: router.workerId,
         });
+
+        if(!room || !worker) return
       
         /**
          * 向 consumer 服务发起 http 请求【当事务正常执行才会发起】
@@ -498,6 +504,8 @@ export class RouterService {
         const worker = await this.workerService.get({
           workerId: router.workerId,
         });
+
+        if(!room || !worker) return
 
         const params = {
           routerId: data.routerId,

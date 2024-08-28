@@ -3,16 +3,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, getConnection } from 'typeorm';
 import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { types } from 'mediasoup';
-import { constants } from '@/shared/constants';
+import { constants } from '@/common/constants';
 
-import { mediasoupWorkerManager } from '../../shared/libs/worker';
+import { mediasoupWorkerManager } from '../../common/worker/worker';
 import env from '@/config/env';
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class WorkerService {
   constructor(
     @InjectRepository(MediaWorker)
     private readonly mediaWorkerDo: MediaWorker,
+    @InjectPinoLogger(WorkerService.name)
+    private readonly logger: PinoLogger,
   ) {}
 
   async init() {
@@ -66,21 +69,21 @@ export class WorkerService {
       .andWhere('worker.transportCount < worker.maxTransport')
       .getOne();
     // 如果存在则返回，没有则抛404
-    if (worker) {
-      return worker;
+    if (!worker) {
+      this.logger.error('worker not found')
+      return;
     }
-    console.error('Worker not found')
-    return
+    return worker;
   }
 
   async get(data: { workerId: string }) {
     const worker = await MediaWorker.getRepository().findOne({
       where: { id: data.workerId },
     });
-    if (worker) {
-      return worker;
+    if (!worker) {
+      this.logger.error('worker not found')
+      return;
     }
-    console.error('Worker not found')
-    return
+    return worker;
   }
 }

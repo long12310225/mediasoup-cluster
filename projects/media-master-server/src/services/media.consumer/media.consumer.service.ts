@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { types } from 'mediasoup';
-import { MediasoupConsumerWebRTCTransport } from '../media.webrtc.transport/mediasoup.consumer.webrtc.transport.service';
+import { ConsumerMediaWebRTCTransport } from '../media.webrtc.transport/consumer.media.webrtc.transport.service';
 import { MediaRouterService } from '../media.router/media.router.service';
 import { MediaPlainTransportService } from '../media.plain.transport/media.plain.transport.service';
-import { fetchApiMaster } from '@/shared/fetch'
+import { fetchApiMaster } from '@/common/fetch'
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class MediaConsumerService {
@@ -11,10 +12,13 @@ export class MediaConsumerService {
   static consumers = new Map<string, types.Consumer>();
 
   constructor(
-    private readonly mediasoupConsumerWebRTCTransport: MediasoupConsumerWebRTCTransport,
+    private readonly logger: PinoLogger,
+    private readonly mediasoupConsumerWebRTCTransport: ConsumerMediaWebRTCTransport,
     private readonly mediaPlainTransportService: MediaPlainTransportService,
     private readonly mediaRouterService: MediaRouterService,
-  ) { }
+  ) { 
+    this.logger.setContext(MediaConsumerService.name)
+  }
 
   /**
    * 创建 mediasoup consumer
@@ -39,6 +43,7 @@ export class MediaConsumerService {
     const router = this.mediaRouterService.get(data.routerId);
 
     if (
+      !router &&
       !router.canConsume({
         producerId: data.producerId,
         rtpCapabilities: data.rtpCapabilities,
@@ -60,10 +65,7 @@ export class MediaConsumerService {
       console.log("%c Line:373 🥥 5 创建 consumer -- create get transport: ", "color:#f5ce50", transport);
     }
     
-    if (!transport) {
-      console.warn('_createConsumer() | Transport for consuming not found')
-      return
-    }
+    if (!transport) return
 
     // 创建一个 consumer 实例
     let consumer
@@ -75,10 +77,12 @@ export class MediaConsumerService {
         rtpCapabilities: data.rtpCapabilities,
         paused: true,
       });
-    } catch (error) {
-      console.warn('Line:70 🍅 _createConsumer() | transport.consume():%o', error)
+    } catch (e) {
+      this.logger.error(e)
       return
     }
+
+    if (!consumer) return
 
     // 缓存 consumer
     MediaConsumerService.consumers.set(consumer.id, consumer);
@@ -278,13 +282,18 @@ export class MediaConsumerService {
    * @returns 
    */
   async pause(data: { consumerId: string }) {
-    // 获取 consumer 
-    const consumer = this.get(data);
-    console.log("%c Line:92 测试 consumer pause", "color:#ffdd4d", consumer);
-    // 调用 consumer 的 pause 方法，暂停媒体流
-    await consumer.pause();
-    // 返回空对象
-    return {};
+    try {
+      // 获取 consumer 
+      const consumer = this.get(data);
+      console.log("%c Line:92 测试 consumer pause", "color:#ffdd4d", consumer);
+      if (!consumer) return
+      // 调用 consumer 的 pause 方法，暂停媒体流
+      await consumer.pause();
+      // 返回空对象
+      return {};
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -293,16 +302,21 @@ export class MediaConsumerService {
    * @returns 
    */
   async resume(data: { consumerId: string }) {
-    console.log("%c Line:373 🌰 6 消费 consumer -- resume data", "color:#f5ce50", data);
-     
-    // 从缓存中取出 consumer
-    const consumer = this.get(data);
-    console.log("%c Line:373 🌰 6 消费 consumer -- resume consumer", "color:#f5ce50", consumer);
-     
-    // 取消暂停服务器端消费者
-    await consumer.resume();
-    // 返回空对象
-    return {};
+    try {
+      console.log("%c Line:373 🌰 6 消费 consumer -- resume data", "color:#f5ce50", data);
+      // 从缓存中取出 consumer
+      const consumer = this.get(data);
+      console.log("%c Line:373 🌰 6 消费 consumer -- resume consumer", "color:#f5ce50", consumer);
+      if (!consumer) return
+
+      // 取消暂停服务器端消费者
+      await consumer.resume();
+
+      // 返回空对象
+      return {};
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -311,11 +325,17 @@ export class MediaConsumerService {
    * @returns 
    */
   async getStats(data: { consumerId: string }) {
-    // 从缓存中取出 consumer
-    const consumer = this.get(data);
-    // 获取 consumer 状态
-    const res = await consumer.getStats();
-    return res;
+    try {
+      // 从缓存中取出 consumer
+      const consumer = this.get(data);
+      if (!consumer) return
+
+      // 获取 consumer 状态
+      const res = await consumer.getStats();
+      return res;
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -324,12 +344,18 @@ export class MediaConsumerService {
    * @returns 
    */
   async setPriority({ consumerId, priority }: { consumerId: string, priority: any}) {
-    // 从缓存中取出 consumer
-    const consumer = this.get({ consumerId });
-    // 设置消费优先级
-    await consumer.setPriority(priority);
-    // 返回空对象
-    return {};
+    try {
+      // 从缓存中取出 consumer
+      const consumer = this.get({ consumerId });
+      if (!consumer) return
+
+      // 设置消费优先级
+      await consumer.setPriority(priority);
+      // 返回空对象
+      return {};
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -342,12 +368,17 @@ export class MediaConsumerService {
     spatialLayer: any,
     temporalLayer: any
   }) {
-    // 从缓存中取出 consumer
-    const consumer = this.get({ consumerId });
-    // 设置消费首选图层
-    await consumer.setPreferredLayers({ spatialLayer, temporalLayer }) 
-    // 返回空对象
-    return {};
+    try {
+      // 从缓存中取出 consumer
+      const consumer = this.get({ consumerId });
+      if (!consumer) return
+      // 设置消费首选图层
+      await consumer.setPreferredLayers({ spatialLayer, temporalLayer }) 
+      // 返回空对象
+      return {};
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -358,12 +389,17 @@ export class MediaConsumerService {
   async requestKeyFrame({ consumerId }: {
     consumerId: string,
   }) {
-    // 从缓存中取出 consumer
-    const consumer = this.get({ consumerId });
-    // 设置请求消费关键帧
-    await consumer.requestKeyFrame() 
-    // 返回空对象
-    return {};
+    try {
+      // 从缓存中取出 consumer
+      const consumer = this.get({ consumerId });
+      if (!consumer) return
+      // 设置请求消费关键帧
+      await consumer.requestKeyFrame()
+      // 返回空对象
+      return {};
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
   
   /**
@@ -374,11 +410,11 @@ export class MediaConsumerService {
   get(data: { consumerId: string }) {
     // 从缓存中取出 consumer
     const consumer = MediaConsumerService.consumers.get(data.consumerId);
-    if (consumer) {
-      return consumer;
+    if (!consumer) {
+      this.logger.error('consumer not found');
+      return;
     }
-    console.error('Consumer not found');
-    return;
+    return consumer;
   }
 
   getConsumers(data) {

@@ -3,15 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MediaRoom } from '@/dao/room/media.room.do';
 import { types } from 'mediasoup';
-import { constants } from '@/shared/constants';
-import { fetchApi } from '@/shared/fetch'
+import { constants } from '@/common/constants';
+import { fetchApi } from '@/common/fetch'
 
 import { TransportService } from '@/services/transport/transport.service';
 import { MediaProducer } from '@/dao/producer/media.producer.do';
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class ProducerService {
   constructor(
+    @InjectPinoLogger(ProducerService.name)
+    private readonly logger: PinoLogger,
     private readonly transportService: TransportService
   ) { }
 
@@ -33,7 +36,7 @@ export class ProducerService {
     });
 
     // 如果类型是 producer
-    if (transport.type === constants.PRODUCER) {
+    if (transport?.type === constants.PRODUCER) {
       // 发起 http 转发到 producer 服务中，创建 producer
       const result = await fetchApi({
         host: transport.worker.apiHost,
@@ -64,7 +67,7 @@ export class ProducerService {
       return result;
     }
 
-    console.error('Invalid transport')
+    this.logger.error('transport 类型不对，请检查')
     return
   }
 
@@ -80,12 +83,11 @@ export class ProducerService {
       .findOne({
         where: { id: data.producerId },
       });
-    if (producer) {
-      return producer;
+    if (!producer) {
+      this.logger.error('producer not found');
+      return
     }
-
-    console.error('Producer not found');
-    return
+    return producer;
   }
 
   /**
@@ -96,10 +98,14 @@ export class ProducerService {
   public async pause(data: { producerId: string }) {
     // 获取 producer
     const producer = await this.get(data);
+    if(!producer) return
+
     // 创建 transport service 实例，并调用实例方法 get，通过 transportId 获取 transport
     const transport = await this.transportService.get({
       transportId: producer.transportId,
     });
+    if(!transport) return
+
     // 发起 http 访问 producer 服务器（转发） 
     await fetchApi({
       host: transport.worker.apiHost,
@@ -120,11 +126,13 @@ export class ProducerService {
   public async getStats(data: { producerId: string }) {
     // 获取 producer
     const producer = await this.get(data);
+    if(!producer) return
 
     // 创建 transport service 实例，并调用实例方法 get，通过 transportId 获取 transport
     const transport = await this.transportService.get({
       transportId: producer.transportId,
     });
+    if(!transport) return
 
     // 发起 http 访问 producer 服务器（转发） 
     const res = await fetchApi({
@@ -145,10 +153,14 @@ export class ProducerService {
   public async resume(data: { producerId: string }) {
     // 获取 producer
     const producer = await this.get(data);
+    if(!producer) return
+    
     // 创建 transport service 实例，并调用实例方法 get，通过 transportId 获取 transport
     const transport = await this.transportService.get({
       transportId: producer.transportId,
     });
+    if (!transport) return
+    
     // 发起 http 访问 producer 服务器（转发） 
     await fetchApi({
       host: transport.worker.apiHost,
@@ -168,11 +180,13 @@ export class ProducerService {
   public async closeProducer(data: { producerId: string }) {
     // 获取 producer
     const producer = await this.get(data);
+    if(!producer) return
 
     // 创建 transport service 实例，并调用实例方法 get，通过 transportId 获取 transport
     const transport = await this.transportService.get({
       transportId: producer.transportId,
     });
+    if (!transport) return
 
     // 发起 http 访问 producer 服务器（转发） 
     await fetchApi({

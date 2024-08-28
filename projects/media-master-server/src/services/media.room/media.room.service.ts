@@ -1,24 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { MediaRouterService } from '../media.router/media.router.service';
-import { MediasoupProducerWebRTCTransport } from "@/services/media.webrtc.transport/mediasoup.producer.webrtc.transport.service";
-import { MediasoupConsumerWebRTCTransport } from "@/services/media.webrtc.transport/mediasoup.consumer.webrtc.transport.service";
+import { ProducerMediaWebRTCTransport } from "@/services/media.webrtc.transport/producer.media.webrtc.transport.service";
+import { ConsumerMediaWebRTCTransport } from "@/services/media.webrtc.transport/consumer.media.webrtc.transport.service";
 import { MediaProducerService } from "@/services/media.producer/media.producer.service";
 import { MediaConsumerService } from "@/services/media.consumer/media.consumer.service";
 import { MediaDataProducerService } from "@/services/media.dataProdecer/media.dataProducer.service";
 import { MediaDataConsumerService } from "@/services/media.dataConsumer/media.dataConsumer.service";
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class MediaRoomService {
 
   constructor(
+    private readonly logger: PinoLogger,
     private readonly mediaRouterService: MediaRouterService,
-    private readonly mediasoupProducerWebRTCTransport: MediasoupProducerWebRTCTransport,
-    private readonly mediasoupConsumerWebRTCTransport: MediasoupConsumerWebRTCTransport,
+    private readonly mediasoupProducerWebRTCTransport: ProducerMediaWebRTCTransport,
+    private readonly mediasoupConsumerWebRTCTransport: ConsumerMediaWebRTCTransport,
     private readonly mediaProducerService: MediaProducerService,
     private readonly mediaConsumerService: MediaConsumerService,
     private readonly mediaDataProducerService: MediaDataProducerService,
     private readonly mediaDataConsumerService: MediaDataConsumerService,
-  ) { }
+  ) { 
+    this.logger.setContext(MediaRoomService.name)
+  }
 
   /**
    * 创建 mediasoup router

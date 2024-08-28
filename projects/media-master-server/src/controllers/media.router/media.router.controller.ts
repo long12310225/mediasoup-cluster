@@ -9,7 +9,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { MediaRouterService } from '../../services/media.router/media.router.service';
-import { Params } from '@/shared/decorators';
+import { Params } from '@/common/decorators';
 
 @Controller()
 export class MediaRouterController {

@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { types } from 'mediasoup';
 import env from '@/config/env';
-import { MediasoupProducerWebRTCTransport } from '../media.webrtc.transport/mediasoup.producer.webrtc.transport.service';
-import { fetchApiMaster } from '@/shared/fetch';
+import { ProducerMediaWebRTCTransport } from '../media.webrtc.transport/producer.media.webrtc.transport.service';
+import { fetchApiMaster } from '@/common/fetch';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class MediaProducerService {
@@ -10,8 +11,11 @@ export class MediaProducerService {
   static producers = new Map<string, types.Producer>();
 
   constructor(
-    private readonly mediasoupProducerWebRTCTransport: MediasoupProducerWebRTCTransport
-  ) { }
+    private readonly logger: PinoLogger,
+    private readonly mediasoupProducerWebRTCTransport: ProducerMediaWebRTCTransport
+  ) { 
+    this.logger.setContext(MediaProducerService.name)
+  }
 
   /**
    * 创建 producer
@@ -25,29 +29,35 @@ export class MediaProducerService {
     appData?: any;
     peerId?: string
   }) {
-    // 从缓存 transports 中取出 transport
-    const transport = this.mediasoupProducerWebRTCTransport.get(
-      data.transportId
-    );
-    const { kind, rtpParameters } = data;
-    // 创建生产者 producer, 传输生产数据（音视频数据）
-    const producer = await transport.produce({
-      kind,
-      rtpParameters,
-      appData: data?.appData
-    });
+    try {
+      const { kind, rtpParameters } = data;
+      // 从缓存 transports 中取出 transport
+      const transport = this.mediasoupProducerWebRTCTransport.get(
+        data.transportId
+      );
+      if (!transport) return
+    
+      // 创建生产者 producer, 传输生产数据（音视频数据）
+      const producer = await transport.produce({
+        kind,
+        rtpParameters,
+        appData: data?.appData
+      });
 
-    if(data?.peerId) this.producerHandler(producer, data?.peerId)
+      if(data?.peerId) this.producerHandler(producer, data?.peerId)
 
-    // 缓存生产者 producer
-    MediaProducerService.producers.set(producer.id, producer);
+      // 缓存生产者 producer
+      MediaProducerService.producers.set(producer.id, producer);
 
-    // 返回 producer properties
-    return {
-      id: producer.id,
-      kind: producer.kind,
-      appData: producer?.appData
-    };
+      // 返回 producer properties
+      return {
+        id: producer.id,
+        kind: producer.kind,
+        appData: producer?.appData
+      };
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   producerHandler(producer, peerId) {
@@ -116,12 +126,16 @@ export class MediaProducerService {
    * @returns 
    */
   async pause(data: { producerId: string }) {
-    // 获取 producer 
-    const producer = this.get(data);
-    // 调用 producer 的 pause 方法，暂停媒体流
-    await producer.pause();
-    // 返回空对象
-    return {};
+    try {
+      // 获取 producer 
+      const producer = this.get(data);
+      // 调用 producer 的 pause 方法，暂停媒体流
+      await producer.pause();
+      // 返回空对象
+      return {};
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -130,12 +144,18 @@ export class MediaProducerService {
    * @returns 
    */
   async resume(data: { producerId: string }) {
-    // 获取 producer 
-    const producer = this.get(data);
-    // 调用 producer 的 resume 方法，重连媒体流
-    await producer.resume();
-    // 返回空对象
-    return {};
+    try {
+      // 获取 producer 
+      const producer = this.get(data);
+      if (!producer) return
+      
+      // 调用 producer 的 resume 方法，重连媒体流
+      await producer.resume();
+      // 返回空对象
+      return {};
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -144,10 +164,16 @@ export class MediaProducerService {
    * @returns 
    */
   async getStats(data: { producerId: string }) {
-    // 获取 producer 
-    const producer = this.get(data);
-    const stats = await producer.getStats()
-    return stats;
+    try {
+      // 获取 producer 
+      const producer = this.get(data);
+      if (!producer) return
+  
+      const stats = await producer.getStats()
+      return stats;
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -156,11 +182,10 @@ export class MediaProducerService {
   get(data: { producerId: string }) {
     // 从缓存中取出 producer
     const producer = MediaProducerService.producers.get(data.producerId);
-    if (producer) {
-      return producer;
+    if (!producer) {
+      this.logger.error('producer not found')
     }
-    console.error('Producer not found');
-    return;
+    return producer;
   }
 
   /**
@@ -168,11 +193,16 @@ export class MediaProducerService {
    * @param data 
    */
   close(data: { producerId: string }) {
-    // 获取 producer 
-    const producer = this.get(data);
-    producer.close();
-    // 返回空对象
-    return {};
+    try {
+      // 获取 producer 
+      const producer = this.get(data);
+      if (!producer) return
+      producer.close();
+      // 返回空对象
+      return {};
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   getProducers(data) {

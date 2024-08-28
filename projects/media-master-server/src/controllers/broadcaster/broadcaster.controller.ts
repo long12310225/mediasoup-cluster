@@ -1,5 +1,5 @@
 import { Controller, Post, Get, HttpCode, Delete,Body } from '@nestjs/common';
-import { Params } from '@/shared/decorators';
+import { Params } from '@/common/decorators';
 import { BroadcasterDto, BroadcasterTransportDto, ConnectBroadcasterTransportDto } from '@/dto';
 import { BroadcasterService } from '@/services/broadcaster/broadcaster.service';
 

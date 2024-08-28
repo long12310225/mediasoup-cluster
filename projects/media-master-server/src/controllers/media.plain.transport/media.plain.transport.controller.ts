@@ -9,7 +9,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { MediaPlainTransportService } from '@/services/media.plain.transport/media.plain.transport.service';
-import { Params } from '@/shared/decorators';
+import { Params } from '@/common/decorators';
 
 @Controller()
 export class MediaPlainTransportController {

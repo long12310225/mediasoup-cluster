@@ -1,6 +1,6 @@
 import env from '@/config/env';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { RedisModuleOptions } from '@/shared/redis';
+import { RedisModuleOptions } from '@/shared/modules/redis';
 import { RedisOptions } from 'ioredis';
 
 export const sqlConfig: TypeOrmModuleOptions = {

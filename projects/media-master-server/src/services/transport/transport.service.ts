@@ -3,15 +3,18 @@ import { types } from 'mediasoup';
 import { RouterService } from '../router/router.service';
 import { RoomService } from '../room/room.service';
 import { PeerService } from '../peer/peer.service';
-import { fetchApi } from '@/shared/fetch'
+import { fetchApi } from '@/common/fetch'
 import { MediaTransport } from '../../dao/transport/media.transport.do';
 import { MediaWorker } from '../../dao/worker/media.worker.do';
-import { constants } from '../../shared/constants';
+import { constants } from '../../common/constants';
 import { WebRtcTransportData } from '@/types';
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class TransportService {
   constructor(
+    @InjectPinoLogger(TransportService.name)
+    private readonly logger: PinoLogger,
     private readonly routerService: RouterService,
     private readonly roomService: RoomService,
     private readonly peerService: PeerService
@@ -145,7 +148,7 @@ export class TransportService {
     })
     console.timeEnd(`${timestrap} createConsumerTransport函数 this.peerService.getPeer耗时`)
     if (!peer?.router?.id) {
-      console.error('TransportService createConsumerTransport函数 没有找到 peer')
+      this.logger.error('TransportService createConsumerTransport函数 没有找到 peer')
       return
     }
 
@@ -155,7 +158,7 @@ export class TransportService {
     })
     console.timeEnd(`${timestrap} createConsumerTransport函数 this.routerService.get耗时`)
     if (!router?.id) {
-      console.error('this.roomService.getRoom() 没有找到router')
+      this.logger.error('this.roomService.getRoom() 没有找到router')
       return
     }
 
@@ -210,7 +213,8 @@ export class TransportService {
   public async connectProducer(data: { transportId: string; dtlsParameters: any }) {
     // 从数据库找到对应 transport
     const transport = await this.get({ transportId: data.transportId });
-
+    if (!transport) return
+    
     // 是 producer 类型就转发
     if (transport.type === constants.PRODUCER) {
       const res = await fetchApi({
@@ -227,7 +231,7 @@ export class TransportService {
       // 返回一个空对象
       return {};
     }
-    console.error('Invalid type producer transport');
+    this.logger.error('Invalid type producer transport');
     return
   }
 
@@ -239,6 +243,7 @@ export class TransportService {
   public async connectConsumer(data: { transportId: string; dtlsParameters: any }) {
     // 获取 transport
     const transport = await this.get({ transportId: data.transportId });
+    if (!transport) return
 
     // 如果类型是 'consumer'
     if (transport.type === constants.CONSUMER) {
@@ -256,7 +261,7 @@ export class TransportService {
       // 返回一个空对象
       return {};
     }
-    console.error('Invalid type consumer transport');
+    this.logger.error('Invalid type consumer transport');
     return
   }
 
@@ -268,7 +273,8 @@ export class TransportService {
   public async webRtcTransportRestartIceProducer(data: { transportId: string }) {
     // 从数据库找到对应 transport
     const transport = await this.get({ transportId: data.transportId });
-
+    if (!transport) return
+    
     // 如果类型是 'producer'
     if (transport.type === constants.PRODUCER) { 
       // 发起 http，发送 transportId，连接 transport
@@ -286,7 +292,7 @@ export class TransportService {
 
       return webRTCTransport;
     }
-    console.error('Invalid type producer transport');
+    this.logger.error('Invalid type producer transport');
     return
   }
 
@@ -298,6 +304,7 @@ export class TransportService {
   public async webRtcTransportRestartIceConsumer(data: { transportId: string }) {
     // 从数据库找到对应 transport
     const transport = await this.get({ transportId: data.transportId });
+    if(!transport) return
 
     // 如果类型是 'consumer'
     if (transport.type === constants.CONSUMER) {
@@ -316,7 +323,7 @@ export class TransportService {
 
       return webRTCTransport;
     }
-    console.error('Invalid type consumer transport');
+    this.logger.error('Invalid type consumer transport');
     return
   }
 
@@ -352,11 +359,11 @@ export class TransportService {
         relations: { worker: true },
         where: { id: data.transportId },
       });
-    if (transport) {
-      return transport;
+    if (!transport) {
+      this.logger.error('transport not found');
+      return
     }
-    console.error('Transport not found')
-    return null;
+    return transport;
   }
 
   /**
@@ -427,7 +434,10 @@ export class TransportService {
    */
   public async close(data: { transportId: string }) {
     const transport = await this.get(data);
+    if (!transport) return
+    
     await this.closeTransport(transport);
+
     return {};
   }
 
@@ -451,7 +461,7 @@ export class TransportService {
         }
       });
     } catch (e) {
-      console.error(e)
+      this.logger.error(e)
     }
 
     // 从数据库中，删除对应transport
@@ -528,6 +538,7 @@ export class TransportService {
     // 从数据库找到对应 transport
     const transport = await this.get({ transportId: data.transportId });
     console.log("%c Line:198 🍪 4 连接 transport -- transport: ", "color:#2eafb0", transport);
+    if(!transport) return
 
     if (transport.type === constants.PRODUCER) {
       const res = await fetchApi({
@@ -546,7 +557,7 @@ export class TransportService {
 
       return {};
     }
-    console.error('Invalid type plain transport');
+    this.logger.error('Invalid type plain transport');
     return
   }
 }

@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { constants } from '@/shared/constants';
-import { fetchApi } from '@/shared/fetch'
+import { constants } from '@/common/constants';
+import { fetchApi } from '@/common/fetch'
 
 import { TransportService } from '@/services/transport/transport.service';
 import { RouterService } from '../router/router.service';
 import { MediaConsumer } from '@/dao/consumer/media.consumer.do';
-
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class ConsumerService {
   constructor(
+    @InjectPinoLogger(ConsumerService.name)
+    private readonly logger: PinoLogger,
     private readonly transportService: TransportService,
     private readonly routerService: RouterService
   ) { }
@@ -69,7 +71,7 @@ export class ConsumerService {
       // 返回 mediasoup consumer
       return result;
     }
-    console.error('Invalid transport');
+    this.logger.error('transport 类型不对，请检查');
     return;
   }
 
@@ -150,7 +152,7 @@ export class ConsumerService {
       // 返回 mediasoup consumer
       return result;
     }
-    console.error('Invalid transport');
+    this.logger.error('transport 类型不对，请检查');
     return;
   }
 
@@ -162,11 +164,13 @@ export class ConsumerService {
   public async pause(data: { consumerId: string }) {
     // 获取 consumer
     const consumer = await this.get(data);
+    if(!consumer) return
 
     // 创建 transport service 实例，并调用实例方法 get，通过 transportId 获取 transport
     const transport = await this.transportService.get({
       transportId: consumer.transportId,
     });
+    if (!transport) return
 
     // 发起 http 访问 consumer 服务器（转发） 
     await fetchApi({
@@ -191,6 +195,7 @@ export class ConsumerService {
 
     // 获取 consumer
     const consumer = await this.get(data);
+    if(!consumer) return
 
     // 创建 transport service 实例，并调用实例方法 get，获取 transport
     const transport = await this.transportService.get({
@@ -198,7 +203,7 @@ export class ConsumerService {
     });
     
     // 如果类型是 consumer
-    if (transport.type === constants.CONSUMER) {
+    if (transport?.type === constants.CONSUMER) {
       // 发起 http
       const res = await fetchApi({
         host: transport.worker.apiHost,
@@ -213,7 +218,7 @@ export class ConsumerService {
       // 返回空对象
       return {};
     }
-    console.error('Invalid transport');
+    this.logger.error('transport 类型不对，请检查');
     return;
   }
 
@@ -229,12 +234,15 @@ export class ConsumerService {
   }) {
     // 获取 consumer
     const consumer = await this.get(data);
+    if (!consumer) return
+    
     // 创建 transport service 实例，并调用实例方法 get，获取 transport
     const transport = await this.transportService.get({
       transportId: consumer.transportId,
     });
+
     // 如果类型是 consumer
-    if (transport.type === constants.CONSUMER) {
+    if (transport?.type === constants.CONSUMER) {
       // 发起 http
       await fetchApi({
         host: transport.worker.apiHost,
@@ -250,7 +258,7 @@ export class ConsumerService {
       // 返回空对象
       return {};
     }
-    console.error('Invalid transport');
+    this.logger.error('transport 类型不对，请检查');
     return;
   }
 
@@ -265,12 +273,14 @@ export class ConsumerService {
   }) {
     // 获取 consumer
     const consumer = await this.get(data);
+    if (!consumer) return
+
     // 创建 transport service 实例，并调用实例方法 get，获取 transport
     const transport = await this.transportService.get({
       transportId: consumer.transportId,
     });
     // 如果类型是 consumer
-    if (transport.type === constants.CONSUMER) {
+    if (transport?.type === constants.CONSUMER) {
       // 发起 http
       await fetchApi({
         host: transport.worker.apiHost,
@@ -285,7 +295,7 @@ export class ConsumerService {
       // 返回空对象
       return {};
     }
-    console.error('Invalid transport');
+    this.logger.error('transport 类型不对，请检查');
     return;
   }
 
@@ -299,12 +309,14 @@ export class ConsumerService {
   }) {
     // 获取 consumer
     const consumer = await this.get(data);
+    if (!consumer) return
+
     // 创建 transport service 实例，并调用实例方法 get，获取 transport
     const transport = await this.transportService.get({
       transportId: consumer.transportId,
     });
     // 如果类型是 consumer
-    if (transport.type === constants.CONSUMER) {
+    if (transport?.type === constants.CONSUMER) {
       // 发起 http
       await fetchApi({
         host: transport.worker.apiHost,
@@ -318,7 +330,7 @@ export class ConsumerService {
       // 返回空对象
       return {};
     }
-    console.error('Invalid transport');
+    this.logger.error('transport 类型不对，请检查');
     return;
   }
 
@@ -330,11 +342,13 @@ export class ConsumerService {
   public async getStats({ consumerId }: { consumerId: string }) {
     // 获取 consumer
     const consumer = await this.get({ consumerId });
+    if (!consumer) return
 
     // 创建 transport service 实例，并调用实例方法 get，通过 transportId 获取 transport
     const transport = await this.transportService.get({
       transportId: consumer.transportId,
     });
+    if(!transport) return
 
     // 发起 http 访问 consumer 服务器（转发） 
     const res = await fetchApi({
@@ -361,11 +375,11 @@ export class ConsumerService {
       .findOne({
         where: { id: data.consumerId },
       });
-    if (consumer) {
-      return consumer;
+    if (!consumer) {
+      this.logger.error('consumer not found');
+      return;
     }
-    console.error('Consumer not found');
-    return;
+    return consumer;
   }
 
   /**
@@ -390,7 +404,7 @@ export class ConsumerService {
     });
     console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer transport", "color:#f5ce50", transport);
     
-    if (transport.type === constants.PRODUCER) {
+    if (transport?.type === constants.PRODUCER) {
       const params = {
         transportId: transport.id,
         routerId: transport.routerId,
@@ -423,7 +437,7 @@ export class ConsumerService {
       // 返回 mediasoup consumer
       return result;
     }
-    console.error('Invalid transport');
+    this.logger.error('transport 类型不对，请检查');
     return;
   }
 
@@ -437,14 +451,15 @@ export class ConsumerService {
     // 获取 consumer
     const consumer = await this.get(data);
     console.log("%c Line:373 🌰 6 消费 consumer -- broadcasterConsumerResume consumer", "color:#f5ce50", consumer);
-     
+    if (!consumer) return
+    
     // 创建 transport service 实例，并调用实例方法 get，获取 transport
     const transport = await this.transportService.get({
       transportId: consumer.transportId,
     });
     
     // 如果类型是 consumer
-    if (transport.type === constants.PRODUCER) {
+    if (transport?.type === constants.PRODUCER) {
       // 发起 http
       const res = await fetchApi({
         host: transport.worker.apiHost,
@@ -460,7 +475,7 @@ export class ConsumerService {
       // 返回空对象
       return {};
     }
-    console.error('Invalid transport');
+    this.logger.error('transport 类型不对，请检查');
     return;
   }
   

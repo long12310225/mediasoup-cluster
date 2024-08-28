@@ -9,7 +9,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { TransportService } from '../../services/transport/transport.service';
-import { Params } from '@/shared/decorators';
+import { Params } from '@/common/decorators';
 @Controller()
 export class TransportController {
   constructor(

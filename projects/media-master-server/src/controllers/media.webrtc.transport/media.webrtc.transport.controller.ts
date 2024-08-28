@@ -8,16 +8,16 @@ import {
   Body,
   Param,
 } from '@nestjs/common';
-import { MediasoupConsumerWebRTCTransport } from '../../services/media.webrtc.transport/mediasoup.consumer.webrtc.transport.service'
-import { MediasoupProducerWebRTCTransport } from '../../services/media.webrtc.transport/mediasoup.producer.webrtc.transport.service'
-import { Params } from '@/shared/decorators';
+import { ConsumerMediaWebRTCTransport } from '../../services/media.webrtc.transport/consumer.media.webrtc.transport.service'
+import { ProducerMediaWebRTCTransport } from '../../services/media.webrtc.transport/producer.media.webrtc.transport.service'
+import { Params } from '@/common/decorators';
 
 @Controller()
 export class MediaWebRTCTransportController {
 
   constructor(
-    private readonly mediasoupConsumerWebRTCTransport: MediasoupConsumerWebRTCTransport,
-    private readonly mediasoupProducerWebRTCTransport: MediasoupProducerWebRTCTransport
+    private readonly mediasoupConsumerWebRTCTransport: ConsumerMediaWebRTCTransport,
+    private readonly mediasoupProducerWebRTCTransport: ProducerMediaWebRTCTransport
   ) { }
 
   @Post('/routers/:routerId/consumer_transports')

@@ -9,7 +9,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { ConsumerService } from '@/services/consumer/consumer.service';
-import { Params } from '@/shared/decorators';
+import { Params } from '@/common/decorators';
 
 @Controller()
 export class ConsumerController {

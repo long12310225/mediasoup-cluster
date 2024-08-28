@@ -8,7 +8,7 @@ import { ConsumerService } from "../consumer/consumer.service";
 import { DataConsumerService } from "../dataConsumer/dataConsumer.service";
 import { DataProducerService } from "../dataProducer/dataProducer.service";
 import { WebRtcTransportData } from '@/types';
-import { constants } from '@/shared/constants';
+import { constants } from '@/common/constants';
 
 @Injectable()
 export class BroadcasterService {

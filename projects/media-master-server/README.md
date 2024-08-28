@@ -18,7 +18,7 @@ npm start
 
 ```bash
 src
- |-- common            用于存放基于nest全局功能点的封装内容（如：过滤器、拦截器、管道等等）
+ |-- common            用于存放全局性的其他拓展功能
  |-- config            用于存放全局的配置信息
  |-- controllers       用于存放controller，与modules一一对应
  |   |-- xxx
@@ -35,7 +35,7 @@ src
  |-- services          用于存放service，与modules一一对应
  |   |-- xxx
  |   |-- yyy
- |-- shared            用于存放全局性的其他拓展功能
+ |-- shared            用于存放基于nest全局功能点的封装内容（如：过滤器、拦截器、管道、模块等）
  |-- app.module.ts     主模块
  |-- main.ts           入口
 ```

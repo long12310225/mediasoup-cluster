@@ -1,9 +1,15 @@
+import { logger } from '../../shared/modules/logger/logger';
 import { Injectable } from "@nestjs/common";
 import { Peer } from "@/dao/peer/peer.do";
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class PeerService {
-  
+  constructor(
+    @InjectPinoLogger(PeerService.name)
+    private readonly logger: PinoLogger,
+  ) { }
+
   /**
    * 创建 peer
    * @param data 
@@ -32,9 +38,10 @@ export class PeerService {
         id: data.peerId
       }
     })
-    if (peer) {
-      return peer
+    if (!peer) {
+      this.logger.error('peer not found');
+      return;
     }
-    return
+    return peer
   }
 }

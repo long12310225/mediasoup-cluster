@@ -3,15 +3,20 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MediaRoom } from '@/dao/room/media.room.do';
 import { types } from 'mediasoup';
-import { constants } from '@/shared/constants';
-import { fetchApi } from '@/shared/fetch';
+import { constants } from '@/common/constants';
+import { fetchApi } from '@/common/fetch';
 
 import { TransportService } from '@/services/transport/transport.service';
 import { MediaDataProducer } from '@/dao/dataProducer/media.dataProducer.do';
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class DataProducerService {
-  constructor(private readonly transportService: TransportService) {}
+  constructor(
+    @InjectPinoLogger(DataProducerService.name)
+    private readonly logger: PinoLogger,
+    private readonly transportService: TransportService
+  ) { }
 
   /**
    * 创建 dataProducer
@@ -32,7 +37,7 @@ export class DataProducerService {
     });
 
     // 如果类型是'producer'
-    if (transport.type === constants.PRODUCER) {
+    if (transport?.type === constants.PRODUCER) {
       // 发起 http，返回 mediasoup dataProducer
       const result = await fetchApi({
         host: transport.worker.apiHost,
@@ -64,7 +69,7 @@ export class DataProducerService {
       // 返回 mediasoup dataProducer
       return result;
     }
-    console.error('Invalid transport');
+    this.logger.error('transport 类型不对，请检查');
     return;
   }
 
@@ -81,7 +86,7 @@ export class DataProducerService {
     if (dataProducer) {
       return dataProducer;
     }
-    console.error('dataProducer not found');
+    this.logger.error('dataProducer not found');
     return;
   }
 
@@ -93,12 +98,14 @@ export class DataProducerService {
   public async getStats(data: { dataProducerId: string }) {
     // 获取 dataProducer
     const dataProducer = await this.get(data);
+    if(!dataProducer) return
 
     // 创建 transport service 实例，并调用实例方法 get，通过 transportId 获取 transport
     const transport = await this.transportService.get({
       transportId: dataProducer.transportId,
     });
-
+    if (!transport) return
+    
     // 发起 http 访问 dataProducer 服务器（转发）
     const res = await fetchApi({
       host: transport.worker.apiHost,

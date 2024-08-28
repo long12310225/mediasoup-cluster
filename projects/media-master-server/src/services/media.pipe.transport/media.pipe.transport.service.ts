@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { constants } from '@/shared/constants';
-import { fetchApi } from '@/shared/fetch'
+import { constants } from '@/common/constants';
+import { fetchApi } from '@/common/fetch'
 import { types } from 'mediasoup';
 import { MediaRouterService } from '../media.router/media.router.service';
 import env from '@/config/env';
 import * as chalk from 'chalk';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class MediaPipeTransportService {
@@ -12,8 +13,11 @@ export class MediaPipeTransportService {
   static transports = new Map<string, types.PipeTransport>();
 
   constructor(
+    private readonly logger: PinoLogger,
     private readonly mediaRouterService: MediaRouterService
-  ) { }
+  ) { 
+    this.logger.setContext(MediaPipeTransportService.name)
+  }
 
   /**
    * 创建 pipe transport
@@ -21,18 +25,24 @@ export class MediaPipeTransportService {
    * @returns 
    */
   async create(data: { routerId: string }) {
-    // 获取 router
-    const router = this.mediaRouterService.get(data.routerId);
-    // 通过 router 创建 pipeTransport
-    const transport: types.PipeTransport = await router.createPipeTransport({
-      listenIp: env.getEnv('LISTEN_HOST') || '127.0.0.1',
-      enableSctp: true,
-      numSctpStreams: { OS: 1024, MIS: 1024 },
-    });
-    // 缓存 transport
-    MediaPipeTransportService.transports.set(transport.id, transport);
-    // 返回 transport
-    return transport;
+    try {
+      // 获取 router
+      const router = this.mediaRouterService.get(data.routerId);
+      if (!router) return
+      
+      // 通过 router 创建 pipeTransport
+      const transport: types.PipeTransport = await router.createPipeTransport({
+        listenIp: env.getEnv('LISTEN_HOST') || '127.0.0.1',
+        enableSctp: true,
+        numSctpStreams: { OS: 1024, MIS: 1024 },
+      });
+      // 缓存 transport
+      MediaPipeTransportService.transports.set(transport.id, transport);
+      // 返回 transport
+      return transport;
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -51,7 +61,7 @@ export class MediaPipeTransportService {
     
     // consumer 服务创建 pipeTransport
     const transport: types.PipeTransport = await this.create(data);
-    
+
     // consumer 服务向 producer 服务发送 http 请求
     // 此请求，对应的是下方 createSource 函数的内容
     let sourceResult
@@ -80,7 +90,7 @@ export class MediaPipeTransportService {
       });
       console.timeEnd(chalk.blueBright(`pipeTransportId:${transport.id} transport.connect 耗时`))
     } catch (e) {
-      console.error("%c Line:67 🍢 e", "color:#ffdd4d", e);
+      this.logger.error(e)
     }
 
     // consumer 服务向 producer 服务发送 http 请求
@@ -98,7 +108,7 @@ export class MediaPipeTransportService {
         },
       });
     } catch (e) {
-      console.error("%c Line:89 🍌 e", "color:#b03734", e);
+      this.logger.error(e)
     }
 
     if(!consumerResult) return
@@ -114,7 +124,7 @@ export class MediaPipeTransportService {
       });
       console.timeEnd(chalk.blueBright(`sourceProducerId:${data.sourceProducerId} transport.produce 耗时`))
     } catch (e) {
-      console.error("%c Line:95 🍊 e", "color:#fca650", e);
+      this.logger.error(e)
     }
 
     return {
@@ -134,57 +144,61 @@ export class MediaPipeTransportService {
     sourceRouterId: string;
     sourceDataProducerId: string;
   }) {
-    // console.log("%c 接口 /routers/:routerId/data_destination_pipe_transports 的方法 data", data);
-    const transport: types.PipeTransport = await this.create(data);
-    // console.log("%c Line:105 🌮 transport: types.PipeTransport ==>", "color:#ea7e5c", transport);
+    try {
+      // console.log("%c 接口 /routers/:routerId/data_destination_pipe_transports 的方法 data", data);
+      const transport: types.PipeTransport = await this.create(data);
+      // console.log("%c Line:105 🌮 transport: types.PipeTransport ==>", "color:#ea7e5c", transport);
 
-    // 调用 createDataSource()
-    const sourceResult = await fetchApi({
-      host: data.sourceHost,
-      port: data.sourcePort,
-      path: '/routers/:routerId/data_source_pipe_transports',
-      method: 'POST',
-      data: {
-        routerId: data.sourceRouterId,
-        destinationIp: transport.tuple.localIp,
-        destinationPort: transport.tuple.localPort,
-        destinationSrtpParameters: transport.srtpParameters,
-      },
-    });
+      // 调用 createDataSource()
+      const sourceResult = await fetchApi({
+        host: data.sourceHost,
+        port: data.sourcePort,
+        path: '/routers/:routerId/data_source_pipe_transports',
+        method: 'POST',
+        data: {
+          routerId: data.sourceRouterId,
+          destinationIp: transport.tuple.localIp,
+          destinationPort: transport.tuple.localPort,
+          destinationSrtpParameters: transport.srtpParameters,
+        },
+      });
 
-    if(!sourceResult) return
+      if (!sourceResult) return
+      
+      await transport.connect({
+        ip: sourceResult.sourceIp,
+        port: sourceResult.sourcePort,
+        srtpParameters: sourceResult.sourceSrtpParameters,
+      });
 
-    await transport.connect({
-      ip: sourceResult.sourceIp,
-      port: sourceResult.sourcePort,
-      srtpParameters: sourceResult.sourceSrtpParameters,
-    });
-
-    const consumerResult = await fetchApi({
-      host: data.sourceHost,
-      port: data.sourcePort,
-      path: '/pipe_transports/:transportId/data_consume',
-      method: 'POST',
-      data: {
-        transportId: sourceResult.id,
-        dataProducerId: data.sourceDataProducerId,
-      },
-    });
-
-    if(!consumerResult) return
-
-    const pipeDataProducer = await transport.produceData({
-      id: data.sourceDataProducerId,
-      sctpStreamParameters: consumerResult.sctpStreamParameters,
-      label: consumerResult.label,
-      protocol: consumerResult.protocol,
-      paused: consumerResult.paused,
-      appData: consumerResult.appData,
-    });
-
-    return {
-      id: pipeDataProducer.id
-    };
+      const consumerResult = await fetchApi({
+        host: data.sourceHost,
+        port: data.sourcePort,
+        path: '/pipe_transports/:transportId/data_consume',
+        method: 'POST',
+        data: {
+          transportId: sourceResult.id,
+          dataProducerId: data.sourceDataProducerId,
+        },
+      });
+  
+      if(!consumerResult) return
+  
+      const pipeDataProducer = await transport.produceData({
+        id: data.sourceDataProducerId,
+        sctpStreamParameters: consumerResult.sctpStreamParameters,
+        label: consumerResult.label,
+        protocol: consumerResult.protocol,
+        paused: consumerResult.paused,
+        appData: consumerResult.appData,
+      });
+  
+      return {
+        id: pipeDataProducer.id
+      };
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -200,23 +214,28 @@ export class MediaPipeTransportService {
     destinationPort: number;
     destinationSrtpParameters: types.SrtpParameters;
   }) {
-    // producer 服务创建 pipeTransport
-    const transport = await this.create(data);
+    try {
+      // producer 服务创建 pipeTransport
+      const transport = await this.create(data);
 
-    // transport 连接
-    await transport.connect({
-      ip: data.destinationIp, // consumer 服务的 pipeTransport 信息
-      port: data.destinationPort, // consumer 服务的 pipeTransport 信息
-      srtpParameters: data.destinationSrtpParameters, // consumer 服务的 pipeTransport 信息
-    });
-
-    // 返回 producer pipeTransport 属性
-    return {
-      id: transport.id,
-      sourceIp: transport.tuple.localIp,
-      sourcePort: transport.tuple.localPort,
-      sourceSrtpParameters: transport.srtpParameters,
-    };
+      // transport 连接
+      await transport.connect({
+        ip: data.destinationIp, // consumer 服务的 pipeTransport 信息
+        port: data.destinationPort, // consumer 服务的 pipeTransport 信息
+        srtpParameters: data.destinationSrtpParameters, // consumer 服务的 pipeTransport 信息
+      });
+  
+      // 返回 producer pipeTransport 属性
+      return {
+        id: transport.id,
+        sourceIp: transport.tuple.localIp,
+        sourcePort: transport.tuple.localPort,
+        sourceSrtpParameters: transport.srtpParameters,
+      };
+      
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   async createDataSource(data: {
@@ -225,23 +244,27 @@ export class MediaPipeTransportService {
     destinationPort: number;
     destinationSrtpParameters: types.SrtpParameters;
   }) {
-    // 创建 pipeTransport
-    const transport: types.PipeTransport = await this.create(data);
-
-    // 连接
-    await transport.connect({
-      ip: data.destinationIp,
-      port: data.destinationPort,
-      srtpParameters: data.destinationSrtpParameters,
-    });
-
-    // 返回 pipeTransport 属性
-    return {
-      id: transport.id,
-      sourceIp: transport.tuple.localIp,
-      sourcePort: transport.tuple.localPort,
-      sourceSrtpParameters: transport.srtpParameters,
-    };
+    try {
+      // 创建 pipeTransport
+      const transport: types.PipeTransport = await this.create(data);
+  
+      // 连接
+      await transport.connect({
+        ip: data.destinationIp,
+        port: data.destinationPort,
+        srtpParameters: data.destinationSrtpParameters,
+      });
+  
+      // 返回 pipeTransport 属性
+      return {
+        id: transport.id,
+        sourceIp: transport.tuple.localIp,
+        sourcePort: transport.tuple.localPort,
+        sourceSrtpParameters: transport.srtpParameters,
+      };
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -253,20 +276,25 @@ export class MediaPipeTransportService {
     transportId: string;
     producerId: string // prucuder 待消费的 producerId
   }) {
-    // 根据 pipeTransport id 获取对应 pipeTransport
-    const transport = this.get(data);
-
-    // producer 服务，transport 消费
-    const pipeConsumer = await transport.consume({
-      producerId: data.producerId, // prucuder 待消费的 producerId
-    });
-
-    // 返回消费结果
-    return {
-      kind: pipeConsumer.kind,
-      rtpParameters: pipeConsumer.rtpParameters,
-      paused: pipeConsumer.producerPaused,
-    };
+    try {
+      // 根据 pipeTransport id 获取对应 pipeTransport
+      const transport = this.get(data);
+      if (!transport) return
+  
+      // producer 服务，transport 消费
+      const pipeConsumer = await transport.consume({
+        producerId: data.producerId, // prucuder 待消费的 producerId
+      });
+  
+      // 返回消费结果
+      return {
+        kind: pipeConsumer.kind,
+        rtpParameters: pipeConsumer.rtpParameters,
+        paused: pipeConsumer.producerPaused,
+      };
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   /**
@@ -278,34 +306,38 @@ export class MediaPipeTransportService {
     transportId: string;
     dataProducerId: string
   }) {
-    // 根据 pipeTransport id 获取对应 pipeTransport
-    const transport = this.get(data);
-
-    // transport 消费对应的 producer
-    const pipeConsumerData = await transport.consumeData({
-      dataProducerId: data.dataProducerId,
-    });
-
-    // 返回消费结果
-    return {
-      type: pipeConsumerData.type,
-      sctpStreamParameters: pipeConsumerData.sctpStreamParameters,
-      label: pipeConsumerData.label,
-      protocol: pipeConsumerData.protocol,
-      paused: pipeConsumerData.paused,
-      dataProducerPaused: pipeConsumerData.dataProducerPaused,
-      appData: pipeConsumerData.appData,
-    };
+    try {
+      // 根据 pipeTransport id 获取对应 pipeTransport
+      const transport = this.get(data);
+      if (!transport) return
+      
+      // transport 消费对应的 producer
+      const pipeConsumerData = await transport.consumeData({
+        dataProducerId: data.dataProducerId,
+      });
+  
+      // 返回消费结果
+      return {
+        type: pipeConsumerData.type,
+        sctpStreamParameters: pipeConsumerData.sctpStreamParameters,
+        label: pipeConsumerData.label,
+        protocol: pipeConsumerData.protocol,
+        paused: pipeConsumerData.paused,
+        dataProducerPaused: pipeConsumerData.dataProducerPaused,
+        appData: pipeConsumerData.appData,
+      };
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
   get(data: { transportId: string }) {
     const transport = MediaPipeTransportService.transports.get(
       data.transportId
     );
-    if (transport) {
-      return transport;
+    if (!transport) {
+      this.logger.error('transport not found')
     }
-    console.error('Transport not found');
-    return;
+    return transport;
   }
 }

@@ -4,8 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { MediaRoomService } from '@/services/media.room/media.room.service';
 import { MediaRouterService } from '@/services//media.router/media.router.service';
-import { MediasoupProducerWebRTCTransport } from "@/services/media.webrtc.transport/mediasoup.producer.webrtc.transport.service";
-import { MediasoupConsumerWebRTCTransport } from "@/services/media.webrtc.transport/mediasoup.consumer.webrtc.transport.service";
+import { ProducerMediaWebRTCTransport } from "@/services/media.webrtc.transport/producer.media.webrtc.transport.service";
+import { ConsumerMediaWebRTCTransport } from "@/services/media.webrtc.transport/consumer.media.webrtc.transport.service";
 import { MediaProducerService } from "@/services/media.producer/media.producer.service";
 import { MediaConsumerService } from "@/services/media.consumer/media.consumer.service";
 import { MediaDataProducerService } from "@/services/media.dataProdecer/media.dataProducer.service";
@@ -17,8 +17,8 @@ import { MediaPlainTransportService } from '@/services/media.plain.transport/med
   providers: [
     MediaRoomService,
     MediaRouterService,
-    MediasoupProducerWebRTCTransport,
-    MediasoupConsumerWebRTCTransport,
+    ProducerMediaWebRTCTransport,
+    ConsumerMediaWebRTCTransport,
     MediaProducerService,
     MediaConsumerService,
     MediaDataProducerService,

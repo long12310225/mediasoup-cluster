@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SERVER_URL=https://10.2.30.20:4443
+SERVER_URL=https://10.2.110.222:4443
 ROOM_ID=0000
 PRODUCER_ID=a719d715-bce2-4bd7-840a-6b3f3ce51fba 
 MEDIA_FILE=./output.webm
@@ -127,7 +127,7 @@ echo ">>> PlainTransport Connect ..."
 
 ${HTTPIE_COMMAND} -v \
 	POST ${SERVER_URL}/rooms/${ROOM_ID}/broadcasters/${BROADCASTER_ID}/transports/${transportId}/plainconnect \
-	ip="10.2.30.20" \
+	ip="127.0.0.1" \
 	port:=33334 \
 	rtcpport:=33335 \
 	> /dev/null

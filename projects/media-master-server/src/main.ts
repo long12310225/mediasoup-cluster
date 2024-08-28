@@ -1,15 +1,15 @@
 import * as chalk from 'chalk';
 import helmet from 'helmet';
 import * as fs from 'fs';
-import { otelSDK } from './shared/tracing';
+import { otelSDK } from './common/tracing';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 // import { ValidationPipe } from './common/pipes/validation.pipe';
 import env from '@/config/env';
 import { MainModule } from './main.module';
 import { SlaveModule } from './slave.module';
-import { loginnacos } from './shared/nacos';
+import { loginnacos } from './common/nacos';
 import { WebSocketService } from './services/websocket/websocket.service';
 import { Logger } from 'nestjs-pino';
 

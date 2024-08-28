@@ -6,11 +6,12 @@ import { MediaRouter } from '@/dao/router/media.router.do';
 import { MediaTransport } from '@/dao/transport/media.transport.do';
 import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { types } from 'mediasoup';
-import { constants } from '@/shared/constants';
+import { constants } from '@/common/constants';
 import { WorkerService } from '../worker/worker.service';
-import { fetchApi } from '@/shared/fetch';
-import { Room as ProtooRoom } from '@/shared/protoo-server';
+import { fetchApi } from '@/common/fetch';
+import { Room as ProtooRoom } from '@/common/libs/protoo-server';
 import { RoomDto, BroadcasterDto } from '@/dto';
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class RoomService {
@@ -19,6 +20,8 @@ export class RoomService {
   static routerList = new Map<string, any>();
 
   constructor(
+    @InjectPinoLogger(RoomService.name)
+    private readonly logger: PinoLogger,
     private readonly workerService: WorkerService,
   ) { }
 
@@ -33,6 +36,7 @@ export class RoomService {
     const worker = await this.workerService.getWorker(
       constants.PRODUCER
     );
+    if(!worker) return
 
     /**
      * 发送 POST 请求 producer 服务器（转发）
@@ -103,6 +107,7 @@ export class RoomService {
     const worker = await this.workerService.getWorker(
       constants.PRODUCER
     );
+    if(!worker) return
 
     /**
      * 发送 POST 请求 producer 服务器（转发）
@@ -153,10 +158,11 @@ export class RoomService {
       relations: { worker: true },
       where: { id: data.id },
     });
-    if (roomData) {
-      return roomData;
+    if (!roomData) {
+      this.logger.error('roomData not found')
+      return
     }
-    return null
+    return roomData;
   }
 
   /**
@@ -176,10 +182,13 @@ export class RoomService {
           roomId: data.roomId
         },
       });
-      // console.log("%c Line:180 🍎🍎🍎 roomData", "color:#b03734", roomData);
+      if (!roomData) {
+        this.logger.error('room not found');
+        return;
+      }
       return roomData;
     } catch (error) {
-      console.log("%c Line:179 🥒 error", "color:#ffdd4d", error);
+      this.logger.error(error)
       return null
     }
   }
@@ -191,16 +200,15 @@ export class RoomService {
    */
   public getProtooRoom(roomId: string) {
     const protooRoom = RoomService.protooRooms.get(roomId);
-    if (protooRoom) {
-      return protooRoom
+    if (!protooRoom) {
+      this.logger.error('protooRoom not found');
+      return
     }
-    return null
+    return protooRoom
   }
   
   /**
    * 查询房间列表
-   * @param param0 
-   * @returns 
    */
   async getList({
     page = 1,
@@ -236,6 +244,7 @@ export class RoomService {
   }> {
     // 根据 roomId 查询某个房间
     const room = await this.getRoom(data);
+    if(!room) return
 
     // 发起 http 获取 rtpCapabilities（根据 routerId 查询 rtpCapabilities）
     const result = await fetchApi({
@@ -268,6 +277,8 @@ export class RoomService {
       const room = await this.getRoom(data);
       console.log("%c Line:268 🍡 close room", "color:#7f2b82", room);
 
+      if (!room) return
+      
       // 关闭房间所有 router（consumer）
       await this.closeConsumerRouters({
         roomId: room.id
@@ -288,7 +299,7 @@ export class RoomService {
       // 返回空对象
       return {};
     } catch (error) {
-      console.log(error)
+      this.logger.error(error)
     }
   }
 
@@ -301,6 +312,8 @@ export class RoomService {
       relations: { worker: true }, // 关联 worker
       where: { roomId: data.roomId },
     });
+    if (!routers || !routers.length) return;
+
     // 异步关闭 router（房间）
     await Promise.all(
       routers.map((router) => {
@@ -336,7 +349,7 @@ export class RoomService {
         data: { routerId: data.routerId },
       });
     } catch (error) {
-      console.error(error);
+      this.logger.error(error);
     }
 
     // 查询数据库，相同 routerId 的 MediaTransport 的数据条数
@@ -364,11 +377,14 @@ export class RoomService {
       });
   }
 
+  /**
+   * 获取资源使用情况
+   */
   async getResource(data: RoomDto) {
-
     try {
       // 根据 roomId 查询某个房间
       const room = await this.getRoom(data);
+      if(!room) return
 
       const result = await fetchApi({
         host: room.worker.apiHost,
@@ -378,8 +394,8 @@ export class RoomService {
         data: { roomId: data.roomId },
       });
 
-      } catch (error) {
-        console.error(error);
+    } catch (error) {
+      this.logger.error(error)
     }
   }
 }
