@@ -3,19 +3,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MediaRoom } from '@/dao/room/media.room.do';
 import { types } from 'mediasoup';
-import { constants } from '@/common/constants';
-import { fetchApi } from '@/common/fetch'
+import { CONSTANTS } from '@/common/enum';
 
 import { TransportService } from '@/services/transport/transport.service';
 import { MediaProducer } from '@/dao/producer/media.producer.do';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
+import { CreateProducerDo } from '@/dto';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class ProducerService {
   constructor(
     @InjectPinoLogger(ProducerService.name)
     private readonly logger: PinoLogger,
-    private readonly transportService: TransportService
+    private readonly transportService: TransportService,
+    private readonly axiosService: AxiosService
   ) { }
 
   /**
@@ -23,25 +25,19 @@ export class ProducerService {
    * @param data 
    * @returns 
    */
-  public async create(data: {
-    transportId: string;
-    kind: any;
-    rtpParameters: any;
-    appData?: any;
-    peerId?: string
-  }): Promise<any> {
+  public async create(data: CreateProducerDo): Promise<any> {
     // 创建 transport service 实例，并调用实例方法 get，获取 transport
     const transport = await this.transportService.get({
       transportId: data.transportId,
     });
 
     // 如果类型是 producer
-    if (transport?.type === constants.PRODUCER) {
+    if (transport?.type === CONSTANTS.PRODUCER) {
       // 发起 http 转发到 producer 服务中，创建 producer
-      const result = await fetchApi({
+      const result = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
-        path: '/transports/:transportId/producer',
+        path: '/producers/:transportId/producer',
         method: 'POST',
         data: {
           transportId: transport.id,
@@ -107,7 +103,7 @@ export class ProducerService {
     if(!transport) return
 
     // 发起 http 访问 producer 服务器（转发） 
-    await fetchApi({
+    await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/producers/:producerId/pause',
@@ -135,7 +131,7 @@ export class ProducerService {
     if(!transport) return
 
     // 发起 http 访问 producer 服务器（转发） 
-    const res = await fetchApi({
+    const res = await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/producers/:producerId/getStats',
@@ -162,7 +158,7 @@ export class ProducerService {
     if (!transport) return
     
     // 发起 http 访问 producer 服务器（转发） 
-    await fetchApi({
+    await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/producers/:producerId/resume',
@@ -189,7 +185,7 @@ export class ProducerService {
     if (!transport) return
 
     // 发起 http 访问 producer 服务器（转发） 
-    await fetchApi({
+    await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/producers/:producerId/close',

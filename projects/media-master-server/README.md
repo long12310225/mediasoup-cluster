@@ -215,3 +215,5 @@ ouyang@ouyangdeiMac broadcasters % ps -ef | grep ffmpeg
 
 [ioredis文档](https://redis.github.io/ioredis/classes/Redis.html)
 [ioredis源码](https://github.com/redis/ioredis)
+[nestjs-pino文档](https://www.npmjs.com/package/nestjs-pino)
+[nestjs-pino源码](https://github.com/iamolegga/nestjs-pino)

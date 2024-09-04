@@ -5,7 +5,7 @@ import {
 } from '@/common/libs/protoo-server';
 import env from '@/config/env';
 import * as chalk from 'chalk';
-import { constants } from '@/common/constants';
+import { CONSTANTS } from '@/common/enum';
 import { MediaTransport } from '@/dao/transport/media.transport.do';
 import { RoomService } from '../room/room.service';
 import { RouterService } from '../router/router.service';
@@ -116,7 +116,6 @@ export class WebSocketService {
           console.time(chalk.yellowBright(`用户:${peerId} this.roomService.createOrGetProducerRoom 房间耗时`))
           const room = await this.roomService.createOrGetProducerRoom({ roomId });
           console.timeEnd(chalk.yellowBright(`用户:${peerId} this.roomService.createOrGetProducerRoom 房间耗时`))
-          // console.log("%c Line:100 🍻 🍻 🍻 room", "color:#33a5ff", room);
           let router
           if (room?.id) {
             // 创建 router
@@ -126,6 +125,11 @@ export class WebSocketService {
             })
             this._mediaRouter = router
             console.timeEnd(chalk.yellowBright(`用户:${peerId} this.routerService.getOrCreate 路由耗时`))
+          }
+
+          if (!router) {
+            this.logger.error('没有相关router');
+            return
           }
 
           this.initData(roomId)
@@ -213,12 +217,10 @@ export class WebSocketService {
           otherPeer.notify('peerClosed', {
             peerId: peer.id
           }).catch((error) => { 
-            console.log("某人退出房间通知其他人, error:", "color:#2eafb0", error);
+            this.logger.error(error)
           });
         }
       }
-
-      // console.log("%c 查看当前 peer.data 都存储了什么：", "color:#7f2b82", peer.data);
 
       // Iterate and close all mediasoup Transport associated to ·this Peer, so all
       // its Producers and Consumers will also be closed.
@@ -231,8 +233,6 @@ export class WebSocketService {
       // this.routerService.deleteRouter({ peerId })
 
       // 当最后一个人离开房间时才关闭房间
-      // console.log("%c Line:211 🥕🥕🥕 WebSocketService._protooRoom.roomId", "color:#ea7e5c", WebSocketService._protooRoom.roomId);
-      // console.log("%c Line:211 🥕🥕🥕 WebSocketService._protooRoom.peers", "color:#ea7e5c", WebSocketService._protooRoom.peers);
       if (WebSocketService._protooRoom.peers.length === 0) {
         console.info('last Peer in the room left, closing the room [roomId:%s]', this._roomId)
         this.close();
@@ -279,7 +279,6 @@ export class WebSocketService {
             enableTcp: true
           })
         }
-        // console.log("%c Line:260 🎂 data", "color:#33a5ff", data);
 
         let mediasoupTransport: WebRtcTransportData
         try {
@@ -311,7 +310,10 @@ export class WebSocketService {
       // 004【先执行 002】
       case 'join': {
         // Ensure the Peer is not already joined.
-        if (peer.data.joined) throw new Error('Peer already joined')
+        if (peer.data.joined) {
+          this.logger.error('Peer already joined')
+          return 
+        }
 
         const { displayName, device, rtpCapabilities, sctpCapabilities } = request.data
 
@@ -352,14 +354,12 @@ export class WebSocketService {
         // Notify the new Peer to all other Peers.
         const otherPeers = this._getJoinedPeers({ excludePeer: peer })
         for (const otherPeer of otherPeers) {
-          // console.log("%c Line:385 🍎 🍎 通知其他用户有新用户加入房间", "color:#ea7e5c");
-          // console.log("%c Line:390 🥤 🥤 otherPeers", "color:#2eafb0", otherPeers);
           otherPeer.notify('newPeer', {
             id: peer.id,
             displayName: peer.data.displayName,
             device: peer.data.device,
           }).catch((error) => {
-            console.log("%c Line:272 otherPeer.notify error =>", "color:#2eafb0", error);
+            this.logger.error(error)
           })
         }
         
@@ -383,9 +383,6 @@ export class WebSocketService {
           // Create DataConsumers for existing DataProducers.
           for (const dataProducer of joinedPeer.data.dataProducers.values()) {
             if (dataProducer.label === 'bot') continue
-
-            // console.log("%c  method: join  dataProducer", "color:#fca650", dataProducer);
-
             // 所有的现存的数据生产者，都创建对此新连接进来的人的数据消费渠道
             // 效果：其他人可以收到新进来的人的消息
             this._createDataConsumer({
@@ -418,11 +415,11 @@ export class WebSocketService {
         const transport: MediaTransport = await this.transportService.get({ transportId });
         
         switch (transport.type) {
-          case constants.PRODUCER: {
+          case CONSTANTS.PRODUCER: {
             this.transportService.connectProducer({ transportId, dtlsParameters })
             break;
           }
-          case constants.CONSUMER: {
+          case CONSTANTS.CONSUMER: {
             this.transportService.connectConsumer({ transportId, dtlsParameters })
             break;
           }
@@ -438,7 +435,10 @@ export class WebSocketService {
       // 007【先执行 002，004】
       case 'produce': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) { 
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
         const { transportId, kind, rtpParameters } = request.data
 
@@ -446,7 +446,10 @@ export class WebSocketService {
 
         const transport = peer.data.transports.get(transportId)
 
-        if (!transport) throw new Error(`transport with id "${transportId}" not found`)
+        if (!transport) {
+          this.logger.error(`transport with id "${transportId}" not found`)
+          return
+        }
 
         // Add peerId into appData to later get the associated Peer during
         // the 'loudest' event of the audioLevelObserver.
@@ -462,7 +465,6 @@ export class WebSocketService {
 
         // Store the Producer into the protoo Peer data Object.
         peer.data.producers.set(producerData.id, producerData)
-        // console.log("%c  method: produce  peer.data.producers", "color:#42b983", peer.data.producers);
 
         accept({ id: producerData.id })
 
@@ -494,12 +496,18 @@ export class WebSocketService {
       // 008
       case 'produceData': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
         const { transportId, sctpStreamParameters, label, protocol, appData } = request.data
 
         const transport = peer.data.transports.get(transportId)
-        if (!transport) throw new Error(`transport with id "${transportId}" not found`)
+        if (!transport) {
+          this.logger.error(`transport with id "${transportId}" not found`)
+          return
+        }
         
         let dataProducerData = await this.dataProducerService.createProduceData({
           transportId,
@@ -518,7 +526,6 @@ export class WebSocketService {
           case 'chat': {
             // Create a server-side DataConsumer for each Peer.
 
-            // console.log("%c  method: produceData | this._getJoinedPeers({ excludePeer: peer })", "color:#4fff4B", this._getJoinedPeers({ excludePeer: peer }));
             for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
               const params = {
                 dataConsumerPeer: otherPeer,
@@ -553,11 +560,11 @@ export class WebSocketService {
         const transport: MediaTransport = await this.transportService.get({ transportId });
         
         switch (transport.type) {
-          case constants.PRODUCER: {
+          case CONSTANTS.PRODUCER: {
             iceParameters = await this.transportService.webRtcTransportRestartIceProducer({ transportId })
             break;
           }
-          case constants.CONSUMER: {
+          case CONSTANTS.CONSUMER: {
             iceParameters = await this.transportService.webRtcTransportRestartIceConsumer({ transportId })
             break;
           }
@@ -573,16 +580,21 @@ export class WebSocketService {
       // 010
       case 'closeProducer': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
         const { producerId } = request.data
 
         const producer = peer.data.producers.get(producerId)
-        if (!producer) throw new Error(`producer with id "${producerId}" not found`)
+        if (!producer) {
+          this.logger.error(`producer with id "${producerId}" not found`)
+          return
+        }
 
         // 关闭生产者
         const res = await this.producerService.closeProducer({ producerId })
-        console.log("%c Line:442 🌮 res", "color:#ed9ec7", res);
 
         // Remove from its map.
         peer.data.producers.delete(producer.id) // 删除
@@ -593,16 +605,21 @@ export class WebSocketService {
       // 011
       case 'pauseProducer': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
         const { producerId } = request.data
 
         const producer = peer.data.producers.get(producerId)
-        if (!producer) throw new Error(`producer with id "${producerId}" not found`)
+        if (!producer) {
+          this.logger.error(`producer with id "${producerId}" not found`)
+          return
+        }
 
         // 暂停生产者
         const res = await this.producerService.pause({ producerId })
-        console.log("%c Line:462 🥚 res", "color:#4fff4B", res);
 
         accept()
 
@@ -611,16 +628,22 @@ export class WebSocketService {
       // 012
       case 'resumeProducer': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
         const { producerId } = request.data
 
         const producer = peer.data.producers.get(producerId)
-        if (!producer) throw new Error(`producer with id "${producerId}" not found`)
 
+        if (!producer) {
+          this.logger.error(`producer with id "${producerId}" not found`)
+          return
+        }
+        
         // 恢复生产者
         const res = await this.producerService.resume({ producerId })
-        console.log("%c Line:480 🍑 res", "color:#93c0a4", res);
 
         accept()
 
@@ -629,17 +652,21 @@ export class WebSocketService {
       // 013
       case 'resumeConsumer': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
-        console.log("%c Line:627 🥔 request", "color:#ffdd4d", request);
         const { consumerId } = request.data
 
         const consumer = peer.data.consumers.get(consumerId)
-        if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
+        if (!consumer) {
+          this.logger.error(`consumer with id "${consumerId}" not found`)
+          return
+        }
 
         // 恢复消费者
         const res = await this.consumerService.resume({ consumerId })
-        console.log("%c Line:498 🌭 res", "color:#7f2b82", res);
 
         accept()
 
@@ -648,16 +675,21 @@ export class WebSocketService {
       // 014
       case 'pauseConsumer': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
-
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
+        
         const { consumerId } = request.data
 
         const consumer = peer.data.consumers.get(consumerId)
-        if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
+        if (!consumer) {
+          this.logger.error(`consumer with id "${consumerId}" not found`)
+          return
+        }
 
         // 暂停生产者
         const res = await this.consumerService.pause({ consumerId })
-        console.log("%c Line:516 🍊 res", "color:#ed9ec7", res);
 
         accept()
 
@@ -666,20 +698,25 @@ export class WebSocketService {
       // 015
       case 'setConsumerPreferredLayers': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
-
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
+        
         const { consumerId, spatialLayer, temporalLayer } = request.data
 
         const consumer = peer.data.consumers.get(consumerId)
-        if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
-
+        if (!consumer) {
+          this.logger.error(`consumer with id "${consumerId}" not found`)
+          return
+        }
+        
         // 设置消费首选图层
         const res = await this.consumerService.setPreferredLayers({
           consumerId,
           spatialLayer,
           temporalLayer
         })
-        console.log("%c Line:534 🧀 res", "color:#4fff4B", res);
 
         accept()
 
@@ -688,16 +725,22 @@ export class WebSocketService {
       // 016
       case 'setConsumerPriority': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
         const { consumerId, priority } = request.data
 
         const consumer = peer.data.consumers.get(consumerId)
-        if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
-
+        
+        if (!consumer) {
+          this.logger.error(`consumer with id "${consumerId}" not found`)
+          return
+        }
+        
         // 设置消费优先级
         const res = await this.consumerService.setPriority({ consumerId, priority })
-        console.log("%c Line:556 🍿 res", "color:#3f7cff", res);
 
         accept()
 
@@ -706,16 +749,21 @@ export class WebSocketService {
       // 017、019
       case 'requestConsumerKeyFrame': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
         const { consumerId } = request.data
 
         const consumer = peer.data.consumers.get(consumerId)
-        if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
+        if (!consumer) {
+          this.logger.error(`consumer with id "${consumerId}" not found`)
+          return
+        }
 
         // 请求消费关键帧
         const res = await this.consumerService.requestKeyFrame({ consumerId })
-        console.log("%c Line:574 🍩 res", "color:#fca650", res);
 
         accept()
 
@@ -724,7 +772,10 @@ export class WebSocketService {
       // 018
       case 'changeDisplayName': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
         const { displayName } = request.data
         const oldDisplayName = peer.data.displayName
@@ -753,10 +804,12 @@ export class WebSocketService {
         const { producerId } = request.data
         const producer = peer.data.producers.get(producerId)
 
-        if (!producer) throw new Error(`producer with id "${producerId}" not found`)
+        if (!producer) {
+          this.logger.error(`producer with id "${producerId}" not found`)
+          return
+        }
 
         const stats = await this.producerService.getStats({ producerId })
-        // console.log("%c Line:615 🍩 stats", "color:#6ec1c2", stats);
 
         accept(stats)
 
@@ -766,11 +819,12 @@ export class WebSocketService {
       case 'getConsumerStats': {
         const { consumerId } = request.data
         const consumer = peer.data.consumers.get(consumerId)
-
-        if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
+        if (!consumer) {
+          this.logger.error(`consumer with id "${consumerId}" not found`)
+          return
+        }
 
         const stats = await this.consumerService.getStats({ consumerId })
-        // console.log("%c Line:629 🍭 stats", "color:#6ec1c2", stats);
 
         accept(stats)
 
@@ -780,10 +834,12 @@ export class WebSocketService {
       case 'getDataProducerStats': {
         const { dataProducerId } = request.data
         const dataProducer = peer.data.dataProducers.get(dataProducerId)
-        if (!dataProducer) throw new Error(`dataProducer with id "${dataProducerId}" not found`)
+        if (!dataProducer) {
+          this.logger.error(`dataProducer with id "${dataProducerId}" not found`)
+          return
+        }
 
         const stats = await this.dataProducerService.getStats({ dataProducerId })
-        // console.log("%c Line:638 message type 'getDataProducerStats' stats", "color:#33a5ff", stats);
 
         accept(stats)
 
@@ -793,10 +849,12 @@ export class WebSocketService {
       case 'getDataConsumerStats': {
         const { dataConsumerId } = request.data
         const dataConsumer = peer.data.dataConsumers.get(dataConsumerId)
-        if (!dataConsumer) throw new Error(`dataConsumer with id "${dataConsumerId}" not found`)
-
+        if (!dataConsumer) {
+          this.logger.error(`dataConsumer with id "${dataConsumerId}" not found`)
+          return
+        }
+        
         const stats = await this.dataConsumerService.getStats({ dataConsumerId })
-        // console.log("%c Line:652 🍿 stats", "color:#42b983", stats);
 
         accept(stats)
 
@@ -805,17 +863,22 @@ export class WebSocketService {
       // 025
       case 'pauseConsumers': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
         const consumerIds = request.data.consumerIds // Assuming `consumerIds` is an array of consumer IDs
 
         for (const consumerId of consumerIds) {
           const consumer = peer.data.consumers.get(consumerId)
-          if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
+          if (!consumer) {
+            this.logger.error(`consumer with id "${consumerId}" not found`)
+            return
+          }
 
           // 暂停生产者
           const res = await this.consumerService.pause({ consumerId })
-          // console.log("%c Line:673 🍢 res", "color:#2eafb0", res);
           
           accept()
         }
@@ -824,17 +887,22 @@ export class WebSocketService {
       // 026
       case 'resumeConsumers': {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined')
+        if (!peer.data.joined) {
+          this.logger.error('Peer not yet joined')
+          return
+        }
 
         const consumerIds = request.data.consumerIds // Assuming `consumerIds` is an array of consumer IDs
 
         for (const consumerId of consumerIds) {
           const consumer = peer.data.consumers.get(consumerId)
-          if (!consumer) throw new Error(`consumer with id "${consumerId}" not found`)
+          if (!consumer) {
+            this.logger.error(`consumer with id "${consumerId}" not found`)
+            return
+          }
 
           // 恢复消费者
           const res = await this.consumerService.resume({ consumerId })
-          // console.log("%c Line:498 🌭 res", "color:#7f2b82", res);
           
           accept()
         }
@@ -851,7 +919,7 @@ export class WebSocketService {
         break;
       }
       default: {
-        console.error('unknown request.method "%s"', request.method);
+        this.logger.error(`unknown request.method ${request.method}`);
 
         reject(500, `unknown request.method "${request.method}"`);
       }
@@ -863,8 +931,6 @@ export class WebSocketService {
    * Creates a mediasoup Consumer for the given mediasoup Producer.
    */
   async _createConsumer({ consumerPeer, producerPeer, producer }) {
-    // console.log("%c Line:888 🥝 _createConsumer producer", "color:#ed9ec7", producer);
-    
     // Optimization:
     // - Create the server-side Consumer in paused mode.
     // - Tell its Peer about it and wait for its response.
@@ -892,7 +958,7 @@ export class WebSocketService {
     // 从 peer.data.transports 缓存中，找到对应的 transportData
     const transportData: any = this._getConsumerTransport(consumerPeer);
     if (!transportData) {
-      console.warn('_createConsumer() | Transport for consuming not found')
+      this.logger.error('_createConsumer() | Transport for consuming not found')
       return
     }
 
@@ -904,7 +970,6 @@ export class WebSocketService {
         rtpCapabilities: consumerPeer.data.rtpCapabilities,
         peerId: consumerPeer.id
       })
-      // console.log("%c Line:910 🎂🎂🎂 consumerData", "color:#4fff4B", consumerData);
 
       // 将 consumer 服务返回的 consumerData 缓存到 peer.data.consumers
       if (consumerData) {
@@ -923,7 +988,6 @@ export class WebSocketService {
           producerPaused: consumerData.producerPaused,
         }
         params.appData = producer?.appData
-        // console.log("%c Line:936 🎂🎂 consumerPeer.request('newConsumer', params): params:", "color:#3f7cff", params);
         await consumerPeer.request('newConsumer', params)
   
         // Now that we got the positive response from the remote endpoint, resume
@@ -943,7 +1007,7 @@ export class WebSocketService {
 
       }
     } catch (error) {
-      console.log("%c _createConsumer this.consumerService.createConsumer() error: ", "color:#33a5ff", error);
+      this.logger.error(error)
       return void 0;
     }
   }
@@ -957,7 +1021,6 @@ export class WebSocketService {
     dataProducerPeer = null, // This is null for the bot DataProducer.
     dataProducer,
   }) {
-    // console.log("%Line:986 执行 _createDataConsumer dataProducer", dataProducer);
 
     // NOTE: Don't create the DataConsumer if the remote Peer cannot consume it.
     if (!dataConsumerPeer.data.sctpCapabilities) return
@@ -967,7 +1030,7 @@ export class WebSocketService {
 
     // This should not happen.
     if (!transportData) {
-      console.warn('_createDataConsumer() | Transport for consuming not found')
+      this.logger.warn('_createDataConsumer() | Transport for consuming not found')
       return
     }
 
@@ -980,10 +1043,8 @@ export class WebSocketService {
         dataProducerId: dataProducer.id,
         peerId: dataConsumerPeer.id,
       })
-      // console.log("%c Line:1012 🍩🍩🍩 dataConsumerData", "color:#f5ce50", dataConsumerData);
-      
     } catch (error) {
-      console.warn(' 🍷 _createDataConsumer() | transport.consumeData():%o', error)
+      this.logger.warn(' 🍷 _createDataConsumer() | transport.consumeData():%o', error)
       return
     }
 
@@ -1005,7 +1066,6 @@ export class WebSocketService {
         protocol: dataConsumerData.protocol
       }
       // params.appData = dataProducer.appData
-      // console.log("%c Line:1052 🍞🍞 dataConsumerPeer.request('newDataConsumer', params): params :", "color:#b03734", params);
       await dataConsumerPeer.request('newDataConsumer', params);
       
       // 再恢复 dataConsumer
@@ -1014,7 +1074,7 @@ export class WebSocketService {
       })
 
     } catch (error) {
-      console.warn('_createDataConsumer() | failed:%o', error)
+      this.logger.warn('_createDataConsumer() | failed:%o', error)
     }
   }
 
@@ -1072,12 +1132,9 @@ export class WebSocketService {
    * 事件监听回推 notify 消息
    */
   public async notifyMain(data) {
-    // console.log("Line:1067 🧀 notifyMain 事件监听回推 notify 消息 data ==> ", data);
-    
     try {
       const { method, params, peerId } = data;
       const peer = WebSocketService._protooRoom?.getPeer(peerId);
-      // console.log("%c Line:1075 🥟 peer", "color:#33a5ff", peer);
       if (!peer) return;
 
       await peer?.notify(method, params);
@@ -1091,7 +1148,6 @@ export class WebSocketService {
    * 操作 peer.data.consumers 合集
    */
   public async peerConsumerHandle(data) {
-    console.log("%c Line:1089 🍢 data", "color:#2eafb0", data);
     const { method, params, peerId } = data;
     const peer = WebSocketService._protooRoom?.getPeer(peerId);
     if (!peer) return;
@@ -1108,7 +1164,6 @@ export class WebSocketService {
    * 操作 peer.data.dataConsumers 合集
    */
   public async peerDataConsumerHandle(data) {
-    console.log("%c Line:1107 🍪 data", "color:#ea7e5c", data);
     const { type, params, peerId } = data;
     const peer = WebSocketService._protooRoom?.getPeer(peerId);
     if (!peer) return;

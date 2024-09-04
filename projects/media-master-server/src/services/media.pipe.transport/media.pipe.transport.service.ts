@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { constants } from '@/common/constants';
-import { fetchApi } from '@/common/fetch'
 import { types } from 'mediasoup';
 import { MediaRouterService } from '../media.router/media.router.service';
 import env from '@/config/env';
 import * as chalk from 'chalk';
 import { PinoLogger } from 'nestjs-pino';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class MediaPipeTransportService {
@@ -14,7 +13,8 @@ export class MediaPipeTransportService {
 
   constructor(
     private readonly logger: PinoLogger,
-    private readonly mediaRouterService: MediaRouterService
+    private readonly mediaRouterService: MediaRouterService,
+    private readonly axiosService: AxiosService
   ) { 
     this.logger.setContext(MediaPipeTransportService.name)
   }
@@ -66,7 +66,7 @@ export class MediaPipeTransportService {
     // 此请求，对应的是下方 createSource 函数的内容
     let sourceResult
     try {
-      sourceResult = await fetchApi({
+      sourceResult = await this.axiosService.fetchApi({
         host: data.sourceHost, // prucuder apiHost
         port: data.sourcePort, // prucuder apiPort
         path: '/routers/:routerId/source_pipe_transports',
@@ -97,7 +97,7 @@ export class MediaPipeTransportService {
     // 通知 producer 服务 transport.consume，返回消费结果
     let consumerResult
     try {
-      consumerResult = await fetchApi({
+      consumerResult = await this.axiosService.fetchApi({
         host: data.sourceHost, // prucuder apiHost
         port: data.sourcePort, // prucuder apiPort
         path: '/pipe_transports/:transportId/consume',
@@ -150,7 +150,7 @@ export class MediaPipeTransportService {
       // console.log("%c Line:105 🌮 transport: types.PipeTransport ==>", "color:#ea7e5c", transport);
 
       // 调用 createDataSource()
-      const sourceResult = await fetchApi({
+      const sourceResult = await this.axiosService.fetchApi({
         host: data.sourceHost,
         port: data.sourcePort,
         path: '/routers/:routerId/data_source_pipe_transports',
@@ -171,7 +171,7 @@ export class MediaPipeTransportService {
         srtpParameters: sourceResult.sourceSrtpParameters,
       });
 
-      const consumerResult = await fetchApi({
+      const consumerResult = await this.axiosService.fetchApi({
         host: data.sourceHost,
         port: data.sourcePort,
         path: '/pipe_transports/:transportId/data_consume',

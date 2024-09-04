@@ -10,47 +10,45 @@ import {
 } from '@nestjs/common';
 import { Params } from '@/common/decorators';
 import { MediaProducerService } from '@/services/media.producer/media.producer.service';
+import { CreateProducerDo, ProducerDo } from '@/dto';
 
-@Controller()
+@Controller('/producers')
 export class MediaProducerController {
   constructor(
     private readonly mediaProducerService: MediaProducerService
   ) { }
 
-  @Post('/transports/:transportId/producer')
-  create(@Params() data) {
+  @Post('/:transportId/producer')
+  create(@Params() data: CreateProducerDo) {
     return this.mediaProducerService.create(data);
   }
 
   /**
    * 根据 producerId 暂停媒体流
-   * @param data 
    */
-  @Post('/producers/:producerId/pause')
-  pause(@Params() data) {
+  @Post('/:producerId/pause')
+  pause(@Params() data: ProducerDo) {
     return this.mediaProducerService.pause(data);
   }
 
   /**
    * 根据 producerId 重连媒体流
-   * @param data 
    */
-  @Post('/producers/:producerId/resume')
-  resume(@Params() data) {
+  @Post('/:producerId/resume')
+  resume(@Params() data: ProducerDo) {
     return this.mediaProducerService.resume(data);
   }
   
   /**
    * 关闭 producer
-   * @param data 
    */
-  @Post('/producers/:producerId/close')
-  close(@Params() data) {
+  @Post('/:producerId/close')
+  close(@Params() data: ProducerDo) {
     return this.mediaProducerService.close(data);
   }
 
-  @Post('/producers/:producerId/getStats')
-  getStats(@Params() data) {
+  @Post('/:producerId/getStats')
+  getStats(@Params() data: ProducerDo) {
     return this.mediaProducerService.getStats(data);
   }
 }

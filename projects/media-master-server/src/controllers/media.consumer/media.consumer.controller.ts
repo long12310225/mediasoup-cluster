@@ -10,72 +10,62 @@ import {
 } from '@nestjs/common';
 import { Params } from '@/common/decorators';
 import { MediaConsumerService } from '../../services/media.consumer/media.consumer.service';
+import { CreateConsumerDo, ConsumerDo } from '@/dto';
 
-@Controller()
+@Controller('/consumers')
 export class MediaConsumerController {
   constructor(private readonly mediaConsumerService: MediaConsumerService) {}
 
   /**
    * 创建 mediasoup consumer
-   * @param data
-   * @returns
    */
-  @Post('/transports/:transportId/consumer')
-  create(@Params() data) {
+  @Post('/:transportId/consumer')
+  create(@Params() data: CreateConsumerDo) {
     return this.mediaConsumerService.create(data);
   }
 
   /**
    * 根据 consumerId 暂停媒体流
-   * @param data 
    */
-  @Post('/consumers/:consumerId/pause')
-  pause(@Params() data) {
+  @Post('/:consumerId/pause')
+  pause(@Params() data: ConsumerDo) {
     return this.mediaConsumerService.pause(data);
   }
 
   /**
    * 根据 consumerId，resume consumer
-   * @param data
-   * @returns
    */
-  @Post('/consumers/:consumerId/resume')
-  resume(@Params() data) {
+  @Post('/:consumerId/resume')
+  resume(@Params() data: ConsumerDo) {
     return this.mediaConsumerService.resume(data);
   }
 
   /**
    * 根据 consumerId，设置消费首选图层
-   * @param data 
-   * @returns 
    */
-  @Post('/consumers/:consumerId/setPreferredLayers')
-  setPreferredLayers(@Params() data) {
+  @Post('/:consumerId/setPreferredLayers')
+  setPreferredLayers(@Params() data: ConsumerDo) {
     return this.mediaConsumerService.setPreferredLayers(data);
   }
 
   /**
    * 根据 consumerId，设置消费优先级
-   * @param data 
-   * @returns 
    */
-  @Post('/consumers/:consumerId/setPriority')
-  setPriority(@Params() data) {
+  @Post('/:consumerId/setPriority')
+  setPriority(@Params() data: ConsumerDo) {
     return this.mediaConsumerService.setPriority(data);
   }
 
   /**
    * 根据 consumerId，设置请求消费关键帧
-   * @param data 
-   * @returns 
    */
-  @Post('/consumers/:consumerId/requestKeyFrame')
-  requestKeyFrame(@Params() data) {
+  @Post('/:consumerId/requestKeyFrame')
+  requestKeyFrame(@Params() data: ConsumerDo) {
     return this.mediaConsumerService.requestKeyFrame(data);
   }
 
-  @Post('/consumers/:consumerId/getStats')
-  getStats(@Params() data) {
+  @Post('/:consumerId/getStats')
+  getStats(@Params() data: ConsumerDo) {
     return this.mediaConsumerService.getStats(data);
   }
 }

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { constants } from '@/common/constants';
-import { fetchApi } from '@/common/fetch';
+import { CONSTANTS } from '@/common/enum';
 
 import { TransportService } from '../transport/transport.service';
 import { RouterService } from '../router/router.service';
 import { MediaDataConsumer } from '@/dao/dataConsumer/media.dataConsumer.do';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class DataConsumerService {
@@ -14,6 +14,7 @@ export class DataConsumerService {
     private readonly logger: PinoLogger,
     private readonly transportService: TransportService,
     private readonly routerService: RouterService,
+    private readonly axiosService: AxiosService
   ) {}
 
   /**
@@ -36,7 +37,7 @@ export class DataConsumerService {
     // console.log("%c Line:28 🍤 createConsumeData | transport", "color:#3f7cff", transport);
     
     // 如果类型是'consumer'
-    if (transport?.type === constants.CONSUMER) {
+    if (transport?.type === CONSTANTS.CONSUMER) {
       
       // 创建 router service，并调用实例方法 checkToPipe
       await this.routerService.checkDataProducerToPipe({
@@ -46,7 +47,7 @@ export class DataConsumerService {
 
       // console.log("%c Line:32 🍤 createConsumeData | 执行接口 '/consumer_data/:transportId/create'", "color:#465975");
       // 发起 http。创建 mediasoup dataConsumer
-      const result = await fetchApi({
+      const result = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: '/consumer_data/:transportId/create',
@@ -114,7 +115,7 @@ export class DataConsumerService {
     if(!transport) return
 
     // 发起 http 访问 consumer 服务器（转发）
-    const res = await fetchApi({
+    const res = await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/consumers/:dataConsumerId/getStats',
@@ -143,7 +144,7 @@ export class DataConsumerService {
     if(!transport) return
 
     // 发起 http
-    const res = await fetchApi({
+    const res = await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/consumer_data/:dataConsumerId/pause',
@@ -173,9 +174,9 @@ export class DataConsumerService {
     });
     
     // 如果类型是 consumer
-    if (transport?.type === constants.CONSUMER) {
+    if (transport?.type === CONSTANTS.CONSUMER) {
       // 发起 http
-      const res = await fetchApi({
+      const res = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: '/consumer_data/:dataConsumerId/resume',

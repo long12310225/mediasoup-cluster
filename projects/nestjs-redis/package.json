@@ -1,0 +1,33 @@
+{
+  "name": "nestjs-redis",
+  "version": "1.0.0",
+  "description": "a NestJS ioRedis module",
+  "author": "michael",
+  "license": "MIT",
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.json",
+    "precommit": "lint-staged",
+    "prepublish": "pnpm run build",
+    "publish-public": "pnpm publish --access public",
+    "lint": "eslint -c .eslintrc.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^7.4.4",
+    "@nestjs/core": "^7.4.4",
+    "ioredis": "^5.0.4",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "7.2.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.7",
+    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/parser": "^7.13.1",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.3.2",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.5.2"
+  }
+}

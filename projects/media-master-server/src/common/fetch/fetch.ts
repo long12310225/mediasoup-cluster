@@ -1,5 +1,6 @@
 import env from '../../config/env';
 import axiosPro from './AxiaoPro'
+import { Method } from 'axios';
 import * as https from 'https';
 
 // 创建一个配置了TLS选项的Agent
@@ -17,7 +18,7 @@ export function fetchApi({
   host: string;
   port?: string | number;
   path: string;
-  method: 'POST' | 'GET' | 'PUT' | 'DELETE';
+  method: Method;
   data?: Record<string, any>;
 }): any {
   try {

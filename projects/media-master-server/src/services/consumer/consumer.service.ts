@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { constants } from '@/common/constants';
-import { fetchApi } from '@/common/fetch'
+import { CONSTANTS } from '@/common/enum';
 
 import { TransportService } from '@/services/transport/transport.service';
 import { RouterService } from '../router/router.service';
 import { MediaConsumer } from '@/dao/consumer/media.consumer.do';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
+import { CreateConsumerDo, ConsumerDo } from '@/dto';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class ConsumerService {
@@ -13,7 +14,8 @@ export class ConsumerService {
     @InjectPinoLogger(ConsumerService.name)
     private readonly logger: PinoLogger,
     private readonly transportService: TransportService,
-    private readonly routerService: RouterService
+    private readonly routerService: RouterService,
+    private readonly axiosService: AxiosService
   ) { }
 
   /**
@@ -36,7 +38,7 @@ export class ConsumerService {
       transportId: data.transportId,
     });
     // 如果类型是'consumer'
-    if (transport.type === constants.CONSUMER) {
+    if (transport.type === CONSTANTS.CONSUMER) {
       // 创建 router service，并调用实例方法 checkToPipe
       await this.routerService.checkToPipe({
         routerId: transport.routerId,
@@ -44,10 +46,10 @@ export class ConsumerService {
       });
 
       // 发起 http，返回 mediasoup consumer
-      const result = await fetchApi({
+      const result = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
-        path: '/transports/:transportId/consumer',
+        path: '/consumers/:transportId/consumer',
         method: 'POST',
         data: {
           transportId: transport.id,
@@ -98,7 +100,7 @@ export class ConsumerService {
     });
     
     // 如果类型是'consumer'
-    if (transport.type === constants.CONSUMER) {
+    if (transport.type === CONSTANTS.CONSUMER) {
       /**
        * 通过 consumer 的 transport，找到对应的 router（找到对应的worder）
        * 通过 router 关联的 roomId，找到对应的 room（找到对应的worder）
@@ -123,19 +125,19 @@ export class ConsumerService {
         peerId: data?.peerId,
         broadcasterId: data?.broadcasterId
       }
-      // console.log("%c consumer.service.ts createConsumer() 🍩 执行接口 /transports/:transportId/consumer params:", params);
+      // console.log("%c consumer.service.ts createConsumer() 🍩 执行接口 /consumers/:transportId/consumer params:", params);
       /**
        * 上面创建 pipeTransport 准备就绪后，向 consumer 服务发起请求，通知 consumer 服务进行消费
        */
       // 发起 http，创建 mediasoup consumer
-      const result = await fetchApi({
+      const result = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
-        path: '/transports/:transportId/consumer',
+        path: '/consumers/:transportId/consumer',
         method: 'POST',
         data: params,
       });
-      // console.log("2 consumer.service.ts createConsumer()接口 /transports/:transportId/consumer: 结果consumer=", result);
+      // console.log("2 consumer.service.ts createConsumer()接口 /consumers/:transportId/consumer: 结果consumer=", result);
       
       if(!result) return
 
@@ -144,7 +146,7 @@ export class ConsumerService {
       consumer.id = result.id;
       consumer.producerId = data.producerId;
       consumer.transportId = transport.id;
-      consumer.type = constants.CONSUMER;
+      consumer.type = CONSTANTS.CONSUMER;
 
       // 保存 MediaConsumer 实例到数据库
       await MediaConsumer.getRepository().save(consumer);
@@ -161,7 +163,7 @@ export class ConsumerService {
    * @param data 
    * @returns 
    */
-  public async pause(data: { consumerId: string }) {
+  public async pause(data: ConsumerDo) {
     // 获取 consumer
     const consumer = await this.get(data);
     if(!consumer) return
@@ -173,7 +175,7 @@ export class ConsumerService {
     if (!transport) return
 
     // 发起 http 访问 consumer 服务器（转发） 
-    await fetchApi({
+    await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/consumers/:consumerId/pause',
@@ -190,7 +192,7 @@ export class ConsumerService {
    * @param data
    * @returns
    */
-  public async resume(data: { consumerId: string }) {
+  public async resume(data: ConsumerDo) {
     // console.log("%c consumer.service.ts resume data", "color:#465975", data);
 
     // 获取 consumer
@@ -203,9 +205,9 @@ export class ConsumerService {
     });
     
     // 如果类型是 consumer
-    if (transport?.type === constants.CONSUMER) {
+    if (transport?.type === CONSTANTS.CONSUMER) {
       // 发起 http
-      const res = await fetchApi({
+      const res = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: '/consumers/:consumerId/resume',
@@ -242,9 +244,9 @@ export class ConsumerService {
     });
 
     // 如果类型是 consumer
-    if (transport?.type === constants.CONSUMER) {
+    if (transport?.type === CONSTANTS.CONSUMER) {
       // 发起 http
-      await fetchApi({
+      await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: '/consumers/:consumerId/setPreferredLayers',
@@ -280,9 +282,9 @@ export class ConsumerService {
       transportId: consumer.transportId,
     });
     // 如果类型是 consumer
-    if (transport?.type === constants.CONSUMER) {
+    if (transport?.type === CONSTANTS.CONSUMER) {
       // 发起 http
-      await fetchApi({
+      await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: '/consumers/:consumerId/setPriority',
@@ -316,9 +318,9 @@ export class ConsumerService {
       transportId: consumer.transportId,
     });
     // 如果类型是 consumer
-    if (transport?.type === constants.CONSUMER) {
+    if (transport?.type === CONSTANTS.CONSUMER) {
       // 发起 http
-      await fetchApi({
+      await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: '/consumers/:consumerId/requestKeyFrame',
@@ -339,7 +341,7 @@ export class ConsumerService {
    * @param data 
    * @returns 
    */
-  public async getStats({ consumerId }: { consumerId: string }) {
+  public async getStats({ consumerId }: ConsumerDo) {
     // 获取 consumer
     const consumer = await this.get({ consumerId });
     if (!consumer) return
@@ -351,7 +353,7 @@ export class ConsumerService {
     if(!transport) return
 
     // 发起 http 访问 consumer 服务器（转发） 
-    const res = await fetchApi({
+    const res = await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/consumers/:consumerId/getStats',
@@ -368,7 +370,7 @@ export class ConsumerService {
    * @param data consumerId
    * @returns 
    */
-  public async get(data: { consumerId: string }) {
+  public async get(data: ConsumerDo) {
     // 查询数据库获取 consumer
     const consumer = await MediaConsumer
       .getRepository()
@@ -404,7 +406,7 @@ export class ConsumerService {
     });
     console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer transport", "color:#f5ce50", transport);
     
-    if (transport?.type === constants.PRODUCER) {
+    if (transport?.type === CONSTANTS.PRODUCER) {
       const params = {
         transportId: transport.id,
         routerId: transport.routerId,
@@ -413,10 +415,10 @@ export class ConsumerService {
         broadcasterId: data?.broadcasterId
       }
       // 发起 http，创建 mediasoup consumer
-      const result = await fetchApi({
+      const result = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
-        path: '/transports/:transportId/consumer',
+        path: '/consumers/:transportId/consumer',
         method: 'POST',
         data: params,
       });
@@ -429,7 +431,7 @@ export class ConsumerService {
       consumer.id = result.id;
       consumer.producerId = data.producerId;
       consumer.transportId = transport.id;
-      consumer.type = constants.PRODUCER;
+      consumer.type = CONSTANTS.PRODUCER;
 
       // 保存 MediaConsumer 实例到数据库
       await MediaConsumer.getRepository().save(consumer);
@@ -446,7 +448,7 @@ export class ConsumerService {
    * @param data
    * @returns
    */
-  public async broadcasterConsumerResume(data: { consumerId: string }) {
+  public async broadcasterConsumerResume(data: ConsumerDo) {
 
     // 获取 consumer
     const consumer = await this.get(data);
@@ -459,9 +461,9 @@ export class ConsumerService {
     });
     
     // 如果类型是 consumer
-    if (transport?.type === constants.PRODUCER) {
+    if (transport?.type === CONSTANTS.PRODUCER) {
       // 发起 http
-      const res = await fetchApi({
+      const res = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: '/consumers/:consumerId/resume',

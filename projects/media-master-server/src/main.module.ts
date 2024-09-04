@@ -16,11 +16,13 @@ import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { OpenTelemetryModule } from 'nestjs-otel';
 import { LoggerModule } from './shared/modules/logger/logger.module';
 import { PeerModule } from './modules/peer/peer.module';
-import { RedisModule } from './shared/modules/redis';
+import { RedisModule } from 'nestjs-redis';
 import { BroadcasterModule } from './modules/broadcaster/broadcaster.module';
+import { AxiosModule } from '@/shared/modules/axios';
 
 @Module({
   imports: [
+    AxiosModule.forRoot({}),
     RedisModule.forRoot(redisConfig),
     OpenTelemetryModule.forRoot({
       metrics: {

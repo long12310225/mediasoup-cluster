@@ -70,7 +70,7 @@ export const MessageParse = (raw) => {
       message.ok = true;
       message.data = object.data || {};
     }
-    // Error.
+    // error.
     else {
       message.ok = false;
       message.errorCode = object.errorCode;

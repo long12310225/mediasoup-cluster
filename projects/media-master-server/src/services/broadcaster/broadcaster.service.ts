@@ -8,7 +8,8 @@ import { ConsumerService } from "../consumer/consumer.service";
 import { DataConsumerService } from "../dataConsumer/dataConsumer.service";
 import { DataProducerService } from "../dataProducer/dataProducer.service";
 import { WebRtcTransportData } from '@/types';
-import { constants } from '@/common/constants';
+import { CONSTANTS } from '@/common/enum';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class BroadcasterService {
@@ -26,13 +27,16 @@ export class BroadcasterService {
   private static _broadcasters = new Map()
 
   constructor(
+    private readonly logger: PinoLogger,
     private readonly webSocketService: WebSocketService,
     private readonly transportService: TransportService,
     private readonly producerService: ProducerService,
     private readonly consumerService: ConsumerService,
     private readonly dataConsumerService: DataConsumerService,
     private readonly dataProducerService: DataProducerService,
-  ) {}
+  ) {
+    this.logger.setContext(BroadcasterService.name);
+  }
 
   /**
    * 创建广播者
@@ -45,7 +49,10 @@ export class BroadcasterService {
       else if (typeof device.name !== 'string' || !device.name) throw new TypeError('missing body.device.name')
       else if (rtpCapabilities && typeof rtpCapabilities !== 'object') throw new TypeError('wrong body.rtpCapabilities')
   
-      if (BroadcasterService._broadcasters.has(id)) throw new Error(`broadcaster with id "${id}" already exists`)
+      if (BroadcasterService._broadcasters.has(id)) {
+        this.logger.error(`broadcaster with id "${id}" already exists`)
+        return
+      }
   
       const broadcaster = {
         id,
@@ -115,7 +122,10 @@ export class BroadcasterService {
   public async deleteBroadcaster({ broadcasterId }) {
     const broadcaster = BroadcasterService._broadcasters.get(broadcasterId)
 
-    if (!broadcaster) throw new Error(`broadcaster with id "${broadcasterId}" does not exist`)
+    if (!broadcaster) {
+      this.logger.error(`broadcaster with id "${broadcasterId}" does not exist`)
+      return
+    }
 
     for (const transport of broadcaster.data.transports.values()) {
       // transport.close()
@@ -154,7 +164,10 @@ export class BroadcasterService {
     sctpCapabilities
   }: BroadcasterTransportDto) {
     const broadcaster = BroadcasterService._broadcasters.get(broadcasterId)
-    if (!broadcaster) throw new Error(`broadcaster with id "${broadcasterId}" does not exist`)
+    if (!broadcaster) {
+      this.logger.error(`broadcaster with id "${broadcasterId}" does not exist`)
+      return
+    }
 
     switch (type) {
       case 'webrtc': {
@@ -210,13 +223,20 @@ export class BroadcasterService {
     dtlsParameters
   }: ConnectBroadcasterTransportDto) {
     const broadcaster = BroadcasterService._broadcasters.get(broadcasterId)
-    if (!broadcaster) throw new Error(`broadcaster with id "${broadcasterId}" does not exist`)
+    if (!broadcaster) {
+      this.logger.error(`broadcaster with id "${broadcasterId}" does not exist`)
+      return
+    }
 
     const transportData = broadcaster.data.transports.get(transportId)
-    if (!transportData) throw new Error(`transport with id "${transportId}" does not exist`)
+    if (!transportData) {
+      this.logger.error(`transport with id "${transportId}" does not exist`)
+      return
+    }
 
     if (transportData.constructor.name !== 'WebRtcTransport') {
-      throw new Error(`transport with id "${transportId}" is not a WebRtcTransport`)
+      this.logger.error(`transport with id "${transportId}" is not a WebRtcTransport`)
+      return
     }
     // await transport.connect({ dtlsParameters })
 
@@ -224,7 +244,7 @@ export class BroadcasterService {
     const transport = await this.transportService.get({ transportId });
         
     switch (transport.type) {
-      case constants.PRODUCER: {
+      case CONSTANTS.PRODUCER: {
         this.transportService.connectProducer({ transportId, dtlsParameters })
         break;
       }
@@ -243,10 +263,16 @@ export class BroadcasterService {
     rtcpport
   }) {
     const broadcaster = BroadcasterService._broadcasters.get(broadcasterId)
-    if (!broadcaster) throw new Error(`broadcaster with id "${broadcasterId}" does not exist`)
+    if (!broadcaster) {
+      this.logger.error(`broadcaster with id "${broadcasterId}" does not exist`)
+      return
+    }
 
     const transport = broadcaster.data.transports.get(transportId)
-    if (!transport) throw new Error(`transport with id "${transportId}" does not exist`)
+    if (!transport) {
+      this.logger.error(`transport with id "${transportId}" does not exist`)
+      return
+    }
     
     // await transport.connect({
     //   ip,
@@ -276,10 +302,17 @@ export class BroadcasterService {
    */
   async createBroadcasterProducer({ broadcasterId, transportId, kind, rtpParameters }) {
     const broadcaster = BroadcasterService._broadcasters.get(broadcasterId)
-    if (!broadcaster) throw new Error(`broadcaster with id "${broadcasterId}" does not exist`)
+    
+    if (!broadcaster) {
+      this.logger.error(`broadcaster with id "${broadcasterId}" does not exist`)
+      return
+    }
 
     const transport = broadcaster.data.transports.get(transportId)
-    if (!transport) throw new Error(`transport with id "${transportId}" does not exist`)
+    if (!transport) {
+      this.logger.error(`transport with id "${transportId}" does not exist`)
+      return
+    }
     
     // const producer = await transport.produce({ kind, rtpParameters })
     const producer = await this.producerService.create({
@@ -319,11 +352,20 @@ export class BroadcasterService {
    */
   async createBroadcasterConsumer({ broadcasterId, transportId, producerId }) {
     const broadcaster = BroadcasterService._broadcasters.get(broadcasterId)
-    if (!broadcaster) throw new Error(`broadcaster with id "${broadcasterId}" does not exist`)
-    if (!broadcaster.data.rtpCapabilities) throw new Error('broadcaster does not have rtpCapabilities')
+    if (!broadcaster) {
+      this.logger.error(`broadcaster with id "${broadcasterId}" does not exist`)
+      return
+    }
+    if (!broadcaster.data.rtpCapabilities) {
+      this.logger.error('broadcaster does not have rtpCapabilities')
+      return
+    }
 
     const transportData = broadcaster.data.transports.get(transportId)
-    if (!transportData) throw new Error(`transport with id "${transportId}" does not exist`)
+    if (!transportData) {
+      this.logger.error(`transport with id "${transportId}" does not exist`)
+      return
+    }
     
     // const consumer = await transport.consume({
     //   producerId,
@@ -393,8 +435,14 @@ export class BroadcasterService {
     console.log("%c Line:373 🌰 6 消费 consumer -- consumerResume data", "color:#f5ce50", data);
       
     const broadcaster = BroadcasterService._broadcasters.get(data. broadcasterId)
-    if (!broadcaster) throw new Error(`broadcaster with id "${data.broadcasterId}" does not exist`)
-    if (!broadcaster.data.rtpCapabilities) throw new Error('broadcaster does not have rtpCapabilities')
+    if (!broadcaster) {
+      this.logger.error(`broadcaster with id "${data.broadcasterId}" does not exist`)
+      return
+    }
+    if (!broadcaster.data.rtpCapabilities) {
+      this.logger.error('broadcaster does not have rtpCapabilities')
+      return
+    }
 
     // get consumer.
     const consumer = broadcaster.data.consumers.get(data.consumeId)
@@ -425,11 +473,20 @@ export class BroadcasterService {
    */
   async createBroadcasterDataConsumer({ broadcasterId, transportId, dataProducerId }) {
     const broadcaster = BroadcasterService._broadcasters.get(broadcasterId)
-    if (!broadcaster) throw new Error(`broadcaster with id "${broadcasterId}" does not exist`)
-    if (!broadcaster.data.rtpCapabilities) throw new Error('broadcaster does not have rtpCapabilities')
+    if (!broadcaster) {
+      this.logger.error(`broadcaster with id "${broadcasterId}" does not exist`)
+      return
+    }
+    if (!broadcaster.data.rtpCapabilities) {
+      this.logger.error('broadcaster does not have rtpCapabilities')
+      return
+    }
 
     const transportData = broadcaster.data.transports.get(transportId)
-    if (!transportData) throw new Error(`transport with id "${transportId}" does not exist`)
+    if (!transportData) {
+      this.logger.error(`transport with id "${transportId}" does not exist`)
+      return
+    }
 
     // const dataConsumer = await transport.consumeData({
     //   dataProducerId,
@@ -486,10 +543,16 @@ export class BroadcasterService {
    */
   async createBroadcasterDataProducer({ broadcasterId, transportId, label, protocol, sctpStreamParameters, appData }) {
     const broadcaster = BroadcasterService._broadcasters.get(broadcasterId)
-    if (!broadcaster) throw new Error(`broadcaster with id "${broadcasterId}" does not exist`)
+    if (!broadcaster) {
+      this.logger.error(`broadcaster with id "${broadcasterId}" does not exist`)
+      return
+    }
 
     const transport = broadcaster.data.transports.get(transportId)
-    if (!transport) throw new Error(`transport with id "${transportId}" does not exist`)
+    if (!transport) {
+      this.logger.error(`transport with id "${transportId}" does not exist`)
+      return
+    }
 
     // const dataProducer = await transport.produceData({
     //   sctpStreamParameters,

@@ -16,10 +16,12 @@ import { MediaDataConsumerModule } from './modules/media.dataConsumer/media.data
 import { MediaPlainTransportModule } from './modules/media.plain.transport/media.plain.transport.module'; 
 import { OpenTelemetryModule } from 'nestjs-otel';
 import { LoggerModule } from './shared/modules/logger/logger.module';
-import { RedisModule } from './shared/modules/redis';
+import { RedisModule } from 'nestjs-redis';
+import { AxiosModule } from '@/shared/modules/axios';
 
 @Module({
   imports: [
+    AxiosModule.forRoot({}),
     RedisModule.forRoot(redisConfig),
     OpenTelemetryModule.forRoot({
       metrics: {

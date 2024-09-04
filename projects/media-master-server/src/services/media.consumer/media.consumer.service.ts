@@ -5,6 +5,7 @@ import { MediaRouterService } from '../media.router/media.router.service';
 import { MediaPlainTransportService } from '../media.plain.transport/media.plain.transport.service';
 import { fetchApiMaster } from '@/common/fetch'
 import { PinoLogger } from 'nestjs-pino';
+import { CreateConsumerDo, ConsumerDo } from '@/dto';
 
 @Injectable()
 export class MediaConsumerService {
@@ -23,22 +24,9 @@ export class MediaConsumerService {
   /**
    * 创建 mediasoup consumer
    * @param data 
-   * @returns { {
-   *   id: consumer.id,
-   *   kind: consumer.kind,
-   *   rtpParameters: consumer.rtpParameters,
-   *   type: consumer.type,
-   *   producerPaused: consumer.producerPaused,
-   * } } consumer 对象中的信息
+   * @returns { CreateConsumerDo } consumer 对象中的信息
    */
-  async create(data: {
-    routerId: string;
-    transportId: string;
-    producerId: string;
-    rtpCapabilities: types.RtpCapabilities;
-    peerId?: string;
-    broadcasterId?: string;
-  }) {
+  async create(data: CreateConsumerDo) {
     // 获取 router
     const router = this.mediaRouterService.get(data.routerId);
 
@@ -281,7 +269,7 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async pause(data: { consumerId: string }) {
+  async pause(data: ConsumerDo) {
     try {
       // 获取 consumer 
       const consumer = this.get(data);
@@ -301,7 +289,7 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async resume(data: { consumerId: string }) {
+  async resume(data: ConsumerDo) {
     try {
       console.log("%c Line:373 🌰 6 消费 consumer -- resume data", "color:#f5ce50", data);
       // 从缓存中取出 consumer
@@ -324,7 +312,7 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async getStats(data: { consumerId: string }) {
+  async getStats(data: ConsumerDo) {
     try {
       // 从缓存中取出 consumer
       const consumer = this.get(data);
@@ -343,7 +331,7 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async setPriority({ consumerId, priority }: { consumerId: string, priority: any}) {
+  async setPriority({ consumerId, priority }: ConsumerDo) {
     try {
       // 从缓存中取出 consumer
       const consumer = this.get({ consumerId });
@@ -363,11 +351,7 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async setPreferredLayers({ consumerId, spatialLayer, temporalLayer }: {
-    consumerId: string,
-    spatialLayer: any,
-    temporalLayer: any
-  }) {
+  async setPreferredLayers({ consumerId, spatialLayer, temporalLayer }: ConsumerDo) {
     try {
       // 从缓存中取出 consumer
       const consumer = this.get({ consumerId });
@@ -386,9 +370,7 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async requestKeyFrame({ consumerId }: {
-    consumerId: string,
-  }) {
+  async requestKeyFrame({ consumerId }: ConsumerDo) {
     try {
       // 从缓存中取出 consumer
       const consumer = this.get({ consumerId });
@@ -407,7 +389,7 @@ export class MediaConsumerService {
    * @param data consumerId
    * @returns 
    */
-  get(data: { consumerId: string }) {
+  get(data: ConsumerDo) {
     // 从缓存中取出 consumer
     const consumer = MediaConsumerService.consumers.get(data.consumerId);
     if (!consumer) {

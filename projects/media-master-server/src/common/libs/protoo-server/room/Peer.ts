@@ -234,11 +234,11 @@ export default class Peer extends EnhancedEventEmitter {
         },
         timer: setTimeout(() => {
           if (!this._sents.delete(request.id)) return;
-          pReject(new Error('request timeout'));
+          pReject('request timeout');
         }, timeout),
         close: () => {
           clearTimeout(sent.timer);
-          pReject(new Error('peer closed'));
+          pReject('peer closed');
         },
       };
 

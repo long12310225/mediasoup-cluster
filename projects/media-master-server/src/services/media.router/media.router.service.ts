@@ -5,6 +5,7 @@ import { types } from 'mediasoup';
 import { mediasoupWorkerManager } from '../../common/worker/worker';
 import env from '@/config/env';
 import { PinoLogger } from 'nestjs-pino';
+import { RouterDo } from '@/dto';
 
 @Injectable()
 export class MediaRouterService {
@@ -130,10 +131,10 @@ export class MediaRouterService {
 
   /**
    * 根据 routerId 查询 rtpCapabilities
-   * @param { { routerId: string } } data routerId: router id
+   * @param { RouterDo } data routerId: router id
    * @returns
    */
-  getRtpCapabilities(data: { routerId: string }) {
+  getRtpCapabilities(data: RouterDo) {
     // 获取缓存中的 router
     const router = this.get(data.routerId);
     if(!router) return
@@ -160,10 +161,10 @@ export class MediaRouterService {
 
   /**
    * 根据 routerId 删除 router
-   * @param { { routerId: string } } data routerId: router id
+   * @param { RouterDo } data routerId: router id
    * @returns 
    */
-  close(data: { routerId: string }) {
+  close(data: RouterDo) {
     try {
       // 获取缓存中的 router
       const router = this.get(data.routerId);

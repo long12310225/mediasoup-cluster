@@ -11,7 +11,7 @@ import {
 import { Params } from '@/common/decorators';
 import { MediaDataConsumerService } from '@/services/media.dataConsumer/media.dataConsumer.service';
 
-@Controller()
+@Controller('/consumer_data')
 export class MediaDataConsumerController {
   constructor(
     private readonly mediaDataConsumerService: MediaDataConsumerService,
@@ -22,22 +22,22 @@ export class MediaDataConsumerController {
    * @param data
    * @returns
    */
-  @Post('/consumer_data/:transportId/create')
+  @Post('/:transportId/create')
   createConsumeData(@Params() data) {
     return this.mediaDataConsumerService.createConsumeData(data);
   }
 
-  @Post('/consumer_data/:dataConsumerId/getStats')
+  @Post('/:dataConsumerId/getStats')
   getStats(@Params() data) {
     return this.mediaDataConsumerService.getStats(data);
   }
 
-  @Post('/consumer_data/:dataConsumerId/pause')
+  @Post('/:dataConsumerId/pause')
   pause(@Params() data) {
     return this.mediaDataConsumerService.pause(data);
   }
 
-  @Post('/consumer_data/:dataConsumerId/resume')
+  @Post('/:dataConsumerId/resume')
   resume(@Params() data) {
     return this.mediaDataConsumerService.resume(data);
   }

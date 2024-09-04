@@ -51,7 +51,7 @@ export const loginnacos = async function () {
   // 错误处理
   req.on('error', (err) => {
     // eslint-disable-next-line no-console
-    console.error('Error:', err.message)
+    console.error('error:', err.message)
   })
 
   // 结束请求

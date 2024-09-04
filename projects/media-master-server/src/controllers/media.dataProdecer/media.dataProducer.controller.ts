@@ -11,7 +11,7 @@ import {
 import { Params } from '@/common/decorators';
 import { MediaDataProducerService } from '@/services/media.dataProdecer/media.dataProducer.service';
 
-@Controller()
+@Controller('/producer_data')
 export class MediaDataProducerController {
   constructor(private readonly mediaDataProducerService: MediaDataProducerService) {}
 
@@ -20,12 +20,12 @@ export class MediaDataProducerController {
    * @param data
    * @returns
    */
-  @Post('/producer_data/:transportId/create')
+  @Post('/:transportId/create')
   createProduceData(@Params() data) {
     return this.mediaDataProducerService.createProduceData(data);
   }
 
-  @Post('/producer_data/:dataProducerId/getStats')
+  @Post('/:dataProducerId/getStats')
   getStats(@Params() data) {
     return this.mediaDataProducerService.getStats(data);
   }

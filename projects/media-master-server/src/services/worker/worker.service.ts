@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, getConnection } from 'typeorm';
 import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { types } from 'mediasoup';
-import { constants } from '@/common/constants';
+import { CONSTANTS } from '@/common/enum';
 
 import { mediasoupWorkerManager } from '../../common/worker/worker';
 import env from '@/config/env';
@@ -43,8 +42,9 @@ export class WorkerService {
       dbWorker.apiPort = Number(process.env.PORT || 3000);
       dbWorker.maxTransport =
         Number(env.getEnv('SLAVE_MAX_TRANSPORT_PER_WORKER')) || 100;
-      dbWorker.type = process.env.SLAVE_FOR || constants.CONSUMER;
+      dbWorker.type = process.env.SLAVE_FOR || CONSTANTS.CONSUMER;
       dbWorker.pid = worker.pid;
+      dbWorker.isAliveServe = 1;
       return dbWorker;
     });
 
@@ -67,6 +67,7 @@ export class WorkerService {
       .from(MediaWorker, 'worker')
       .where('worker.type = :type', { type: type })
       .andWhere('worker.transportCount < worker.maxTransport')
+      .andWhere('worker.is_alive_serve = :isAliveServe', { isAliveServe: 1 })
       .getOne();
     // 如果存在则返回，没有则抛404
     if (!worker) {

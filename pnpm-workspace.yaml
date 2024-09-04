@@ -1,6 +1,3 @@
 packages:
   - 'projects/*'
-  - 'reference/mediasoup-cluster'
-  - 'reference/mediasoup-cluster/frontend'
   - 'reference/mediasoup-demo-record/app'
-  - 'reference/mediasoup-demo-record/server'

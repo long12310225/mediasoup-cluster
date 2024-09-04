@@ -3,19 +3,20 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MediaRoom } from '@/dao/room/media.room.do';
 import { types } from 'mediasoup';
-import { constants } from '@/common/constants';
-import { fetchApi } from '@/common/fetch';
+import { CONSTANTS } from '@/common/enum';
 
 import { TransportService } from '@/services/transport/transport.service';
 import { MediaDataProducer } from '@/dao/dataProducer/media.dataProducer.do';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class DataProducerService {
   constructor(
     @InjectPinoLogger(DataProducerService.name)
     private readonly logger: PinoLogger,
-    private readonly transportService: TransportService
+    private readonly transportService: TransportService,
+    private readonly axiosService: AxiosService
   ) { }
 
   /**
@@ -37,9 +38,9 @@ export class DataProducerService {
     });
 
     // 如果类型是'producer'
-    if (transport?.type === constants.PRODUCER) {
+    if (transport?.type === CONSTANTS.PRODUCER) {
       // 发起 http，返回 mediasoup dataProducer
-      const result = await fetchApi({
+      const result = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: '/producer_data/:transportId/create',
@@ -107,7 +108,7 @@ export class DataProducerService {
     if (!transport) return
     
     // 发起 http 访问 dataProducer 服务器（转发）
-    const res = await fetchApi({
+    const res = await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/producer_data/:dataProducerId/getStats',

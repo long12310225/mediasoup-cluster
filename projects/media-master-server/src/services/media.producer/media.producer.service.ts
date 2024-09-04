@@ -4,6 +4,7 @@ import env from '@/config/env';
 import { ProducerMediaWebRTCTransport } from '../media.webrtc.transport/producer.media.webrtc.transport.service';
 import { fetchApiMaster } from '@/common/fetch';
 import { PinoLogger } from 'nestjs-pino';
+import { CreateProducerDo, ProducerDo } from '@/dto';
 
 @Injectable()
 export class MediaProducerService {
@@ -22,13 +23,7 @@ export class MediaProducerService {
    * @param data 
    * @returns 
    */
-  async create(data: {
-    transportId: string;
-    kind: types.MediaKind;
-    rtpParameters: types.RtpParameters;
-    appData?: any;
-    peerId?: string
-  }) {
+  async create(data: CreateProducerDo) {
     try {
       const { kind, rtpParameters } = data;
       // 从缓存 transports 中取出 transport
@@ -125,7 +120,7 @@ export class MediaProducerService {
    * @param data 
    * @returns 
    */
-  async pause(data: { producerId: string }) {
+  async pause(data: ProducerDo) {
     try {
       // 获取 producer 
       const producer = this.get(data);
@@ -143,7 +138,7 @@ export class MediaProducerService {
    * @param data 
    * @returns 
    */
-  async resume(data: { producerId: string }) {
+  async resume(data: ProducerDo) {
     try {
       // 获取 producer 
       const producer = this.get(data);
@@ -163,7 +158,7 @@ export class MediaProducerService {
    * @param data 
    * @returns 
    */
-  async getStats(data: { producerId: string }) {
+  async getStats(data: ProducerDo) {
     try {
       // 获取 producer 
       const producer = this.get(data);
@@ -179,7 +174,7 @@ export class MediaProducerService {
   /**
    * 根据 producerId 获取 producer
    */
-  get(data: { producerId: string }) {
+  get(data: ProducerDo) {
     // 从缓存中取出 producer
     const producer = MediaProducerService.producers.get(data.producerId);
     if (!producer) {
@@ -192,7 +187,7 @@ export class MediaProducerService {
    * 关闭 producer
    * @param data 
    */
-  close(data: { producerId: string }) {
+  close(data: ProducerDo) {
     try {
       // 获取 producer 
       const producer = this.get(data);

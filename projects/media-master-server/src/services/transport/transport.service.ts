@@ -3,12 +3,13 @@ import { types } from 'mediasoup';
 import { RouterService } from '../router/router.service';
 import { RoomService } from '../room/room.service';
 import { PeerService } from '../peer/peer.service';
-import { fetchApi } from '@/common/fetch'
 import { MediaTransport } from '../../dao/transport/media.transport.do';
 import { MediaWorker } from '../../dao/worker/media.worker.do';
-import { constants } from '../../common/constants';
+import { CONSTANTS } from '../../common/enum';
 import { WebRtcTransportData } from '@/types';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
+import { CreateTransportDo, TransportDo, PlainTransportDo } from '@/dto';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class TransportService {
@@ -17,7 +18,8 @@ export class TransportService {
     private readonly logger: PinoLogger,
     private readonly routerService: RouterService,
     private readonly roomService: RoomService,
-    private readonly peerService: PeerService
+    private readonly peerService: PeerService,
+    private readonly axiosService: AxiosService
   ) { }
 
   /**
@@ -25,18 +27,14 @@ export class TransportService {
    * @param data 
    * @returns 
    */
-  public async createProducerTransport(data: {
-    roomId: string;
-    webRtcTransportOptions: any;
-    peerId?: string;
-  }): Promise<WebRtcTransportData> {
+  public async createProducerTransport(data: CreateTransportDo): Promise<WebRtcTransportData> {
     // 根据 roomId 获取 room
     const room = await this.roomService.getRoom({
       roomId: data.roomId,
     });
 
     // 发起 http 请求，访问 producer 服务器（转发）
-    const result = await fetchApi({
+    const result = await this.axiosService.fetchApi({
       host: room.worker.apiHost,
       port: room.worker.apiPort,
       path: '/routers/:routerId/producer_transports',
@@ -55,7 +53,7 @@ export class TransportService {
     mediaTransport.id = result.id;
     mediaTransport.routerId = room.routerId;
     mediaTransport.workerId = room.worker.id;
-    mediaTransport.type = constants.PRODUCER;
+    mediaTransport.type = CONSTANTS.PRODUCER;
     mediaTransport.roomId = room.id;
 
     /*
@@ -95,7 +93,7 @@ export class TransportService {
   //   })
     
   //   // 发起 http 访问，访问 consumer 服务器（转发）
-  //   const result = await fetchApi({
+  //   const result = await this.axiosService.fetchApi({
   //     host: router.worker.apiHost,
   //     port: router.worker.apiPort,
   //     path: '/routers/:routerId/consumer_transports',
@@ -112,7 +110,7 @@ export class TransportService {
   //   mediaTransport.id = result.id;
   //   mediaTransport.routerId = router.id;
   //   mediaTransport.workerId = router.worker.id;
-  //   mediaTransport.type = constants.CONSUMER;
+  //   mediaTransport.type = CONSTANTS.CONSUMER;
   //   mediaTransport.roomId = router.roomId;
 
   //   /*
@@ -135,11 +133,7 @@ export class TransportService {
    * @param data 
    * @returns 
    */
-  public async createConsumerTransport(data: {
-    roomId: string;
-    webRtcTransportOptions: any;
-    peerId?: string;
-  }): Promise<WebRtcTransportData> {
+  public async createConsumerTransport(data: CreateTransportDo): Promise<WebRtcTransportData> {
     const timestrap = new Date().getTime()
 
     console.time(`${timestrap} createConsumerTransport函数 this.peerService.getPeer耗时`)
@@ -164,7 +158,7 @@ export class TransportService {
 
     console.time(`${timestrap} createConsumerTransport函数 fetchApi耗时`)
     // 发起 http 访问，访问 consumer 服务器（转发）
-    const result = await fetchApi({
+    const result = await this.axiosService.fetchApi({
       host: router.worker.apiHost,
       port: router.worker.apiPort,
       path: '/routers/:routerId/consumer_transports',
@@ -184,7 +178,7 @@ export class TransportService {
     mediaTransport.id = result.id;
     mediaTransport.routerId = router.id;
     mediaTransport.workerId = router.worker.id;
-    mediaTransport.type = constants.CONSUMER;
+    mediaTransport.type = CONSTANTS.CONSUMER;
     mediaTransport.roomId = router.roomId;
 
     /*
@@ -210,14 +204,17 @@ export class TransportService {
    * @param data 
    * @returns {}
    */
-  public async connectProducer(data: { transportId: string; dtlsParameters: any }) {
+  public async connectProducer(data: {
+    transportId: string;
+    dtlsParameters: any
+  }) {
     // 从数据库找到对应 transport
     const transport = await this.get({ transportId: data.transportId });
     if (!transport) return
     
     // 是 producer 类型就转发
-    if (transport.type === constants.PRODUCER) {
-      const res = await fetchApi({
+    if (transport.type === CONSTANTS.PRODUCER) {
+      const res = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: `/producer_transports/:transportId/connect`,
@@ -240,15 +237,18 @@ export class TransportService {
    * @param data 
    * @returns {}
    */
-  public async connectConsumer(data: { transportId: string; dtlsParameters: any }) {
+  public async connectConsumer(data: {
+    transportId: string;
+    dtlsParameters: any
+  }) {
     // 获取 transport
     const transport = await this.get({ transportId: data.transportId });
     if (!transport) return
 
     // 如果类型是 'consumer'
-    if (transport.type === constants.CONSUMER) {
+    if (transport.type === CONSTANTS.CONSUMER) {
       // 发起 http，发送 transportId，连接 transport
-      await fetchApi({
+      await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: `/consumer_transports/:transportId/connect`,
@@ -267,18 +267,18 @@ export class TransportService {
 
   /**
    * producer webRTCTransport restartIce params
-   * @param { { transportId: string } } data 
+   * @param { TransportDo } data 
    * @returns 
    */
-  public async webRtcTransportRestartIceProducer(data: { transportId: string }) {
+  public async webRtcTransportRestartIceProducer(data: TransportDo) {
     // 从数据库找到对应 transport
     const transport = await this.get({ transportId: data.transportId });
     if (!transport) return
     
     // 如果类型是 'producer'
-    if (transport.type === constants.PRODUCER) { 
+    if (transport.type === CONSTANTS.PRODUCER) { 
       // 发起 http，发送 transportId，连接 transport
-      const webRTCTransport = await fetchApi({
+      const webRTCTransport = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: `/producer_webrtctransports/:transportId/restartIce`,
@@ -298,18 +298,18 @@ export class TransportService {
 
   /**
    * consumer webRTCTransport restartIce params
-   * @param { { transportId: string } } data 
+   * @param { TransportDo } data 
    * @returns 
    */
-  public async webRtcTransportRestartIceConsumer(data: { transportId: string }) {
+  public async webRtcTransportRestartIceConsumer(data: TransportDo) {
     // 从数据库找到对应 transport
     const transport = await this.get({ transportId: data.transportId });
     if(!transport) return
 
     // 如果类型是 'consumer'
-    if (transport.type === constants.CONSUMER) {
+    if (transport.type === CONSTANTS.CONSUMER) {
       // 发起 http，发送 transportId，连接 transport
-      const webRTCTransport = await fetchApi({
+      const webRTCTransport = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: `/consumer_webrtctransports/:transportId/restartIce`,
@@ -350,7 +350,7 @@ export class TransportService {
    *  }
    * } media_transport 表中一条 transport 数据
    */
-  public async get(data: { transportId: string }) {
+  public async get(data: TransportDo) {
     // 查找数据库
     const transport = await MediaTransport
       .getRepository()
@@ -386,7 +386,7 @@ export class TransportService {
       ],
       where: {
         roomId: data.roomId,
-        type: constants.PRODUCER,
+        type: CONSTANTS.PRODUCER,
       },
     })) as any;
     return { items };
@@ -404,7 +404,7 @@ export class TransportService {
     const room = await this.roomService.getRoom({
       roomId: data.roomId,
     });
-    const result = await fetchApi({
+    const result = await this.axiosService.fetchApi({
       host: room.worker.apiHost,
       port: room.worker.apiPort,
       path: '/routers/:routerId/consumer_transports',
@@ -418,7 +418,7 @@ export class TransportService {
     mediaTransport.id = result.id;
     mediaTransport.routerId = room.routerId;
     mediaTransport.workerId = room.worker.id;
-    mediaTransport.type = constants.CONSUMER;
+    mediaTransport.type = CONSTANTS.CONSUMER;
     mediaTransport.roomId = room.id;
 
     await MediaTransport.getRepository().save(mediaTransport);
@@ -429,10 +429,10 @@ export class TransportService {
 
   /**
    * 根据 transportId 关闭指定 transport
-   * @param data 
+   * @param { TransportDo } data 
    * @returns 
    */
-  public async close(data: { transportId: string }) {
+  public async close(data: TransportDo) {
     const transport = await this.get(data);
     if (!transport) return
     
@@ -448,11 +448,11 @@ export class TransportService {
   public async closeTransport(transport: MediaTransport) {
     // 发送 http 请求，关闭 transport
     try {
-      await fetchApi({
+      await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path:
-          transport.type === constants.CONSUMER
+          transport.type === CONSTANTS.CONSUMER
             ? `/consumer_transports/:transportId`
             : `/producer_transports/:transportId`,
         method: 'DELETE',
@@ -489,7 +489,7 @@ export class TransportService {
     });
 
     // 发起 http 请求，访问 producer 服务器（转发）
-    const result = await fetchApi({
+    const result = await this.axiosService.fetchApi({
       host: room.worker.apiHost,
       port: room.worker.apiPort,
       path: '/routers/:routerId/create_plain_transports',
@@ -507,7 +507,7 @@ export class TransportService {
     mediaTransport.id = result.id;
     mediaTransport.routerId = room.routerId;
     mediaTransport.workerId = room.worker.id;
-    mediaTransport.type = constants.PRODUCER;
+    mediaTransport.type = CONSTANTS.PRODUCER;
     mediaTransport.roomId = room.id;
 
     /*
@@ -527,12 +527,7 @@ export class TransportService {
    * @param data 
    * @returns {}
    */
-  public async connectPlainTransport(data: {
-    transportId: string;
-    ip: string;
-    port: number;
-    rtcpport: number;
-  }) {
+  public async connectPlainTransport(data: PlainTransportDo) {
     console.log("%c Line:198 🍪 4 连接 transport -- connectPlainTransport data: ", "color:#2eafb0", data);
     
     // 从数据库找到对应 transport
@@ -540,8 +535,8 @@ export class TransportService {
     console.log("%c Line:198 🍪 4 连接 transport -- transport: ", "color:#2eafb0", transport);
     if(!transport) return
 
-    if (transport.type === constants.PRODUCER) {
-      const res = await fetchApi({
+    if (transport.type === CONSTANTS.PRODUCER) {
+      const res = await this.axiosService.fetchApi({
         host: transport.worker.apiHost,
         port: transport.worker.apiPort,
         path: `/plain_transports/:transportId/connect`,

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import * as chalk from 'chalk';
 
 class AxiosPro {
@@ -35,10 +35,10 @@ class AxiosPro {
 
   private requestInterceptor() {
     this.axiosInstance.interceptors.request.use(
-      function (config) {
+      function (config: AxiosRequestConfig) {
         return config;
       },
-      function (error) {
+      function (error: AxiosError) {
         return Promise.reject(error);
       },
     );
@@ -46,7 +46,7 @@ class AxiosPro {
 
   private responseInterceptor() {
     this.axiosInstance.interceptors.response.use(
-      function (response) {
+      function (response: AxiosResponse) {
         // 状态 > 400 抛异常
         if (response.status > 400) {
           return JSON.stringify(response)
@@ -55,7 +55,7 @@ class AxiosPro {
           return response.data;
         }
       },
-      function (error) {
+      async function (error: AxiosError) {
         // 响应异常
         if (error.isAxiosError) {
           console.warn(`${chalk.red(`服务异常, 请检查！！！`)}`);

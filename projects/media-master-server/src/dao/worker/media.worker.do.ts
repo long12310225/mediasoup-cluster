@@ -4,7 +4,8 @@ import {
   BaseEntity,
   Index,
   OneToMany,
-  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
   PrimaryColumn,
   CreateDateColumn,
   BeforeInsert
@@ -12,6 +13,7 @@ import {
 import { MediaRoom } from '../room/media.room.do';
 import { MediaTransport } from '../transport/media.transport.do';
 import { MediaRouter } from '../router/media.router.do';
+// import { Serve } from '@/dao/serve/serve.do';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
@@ -69,6 +71,13 @@ export class MediaWorker extends BaseEntity {
   })
   errorCount!: number;
 
+  @Column({
+    name: 'is_alive_serve',
+    type: 'int',
+    default: 0,
+  })
+  isAliveServe?: number;
+
   @OneToMany(() => MediaRoom, (room) => room.worker)
   rooms!: MediaRoom[];
 
@@ -77,6 +86,18 @@ export class MediaWorker extends BaseEntity {
 
   @OneToMany(() => MediaRouter, (router) => router.worker)
   routers!: MediaRouter[];
+
+  // @Column({
+  //   type: 'varchar',
+  //   name: 'serve_id'
+  // })
+  // serveId!: string;
+
+  // @JoinColumn({
+  //   name: 'serve_id'
+  // })
+  // @ManyToOne(() => Serve, (serve) => serve.workers)
+  // serve!: Serve;
 
   @CreateDateColumn({
     name: 'create_date'

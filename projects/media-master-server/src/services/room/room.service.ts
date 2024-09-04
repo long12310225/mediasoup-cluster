@@ -6,12 +6,12 @@ import { MediaRouter } from '@/dao/router/media.router.do';
 import { MediaTransport } from '@/dao/transport/media.transport.do';
 import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { types } from 'mediasoup';
-import { constants } from '@/common/constants';
+import { CONSTANTS } from '@/common/enum';
 import { WorkerService } from '../worker/worker.service';
-import { fetchApi } from '@/common/fetch';
 import { Room as ProtooRoom } from '@/common/libs/protoo-server';
 import { RoomDto, BroadcasterDto } from '@/dto';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class RoomService {
@@ -23,6 +23,7 @@ export class RoomService {
     @InjectPinoLogger(RoomService.name)
     private readonly logger: PinoLogger,
     private readonly workerService: WorkerService,
+    private readonly axiosService: AxiosService
   ) { }
 
   /**
@@ -34,7 +35,7 @@ export class RoomService {
     const { roomId } = data
     // 创建 worder service 实例，并调用实例方法 getWorker 查询数据库是否存在 producer worker
     const worker = await this.workerService.getWorker(
-      constants.PRODUCER
+      CONSTANTS.PRODUCER
     );
     if(!worker) return
 
@@ -46,10 +47,10 @@ export class RoomService {
      *     rtpCapabilities: router.rtpCapabilities,
      *   }
      */
-    const result = await fetchApi({
+    const result = await this.axiosService.fetchApi({
       host: worker.apiHost,
       port: worker.apiPort,
-      path: '/routers',
+      path: '/routers/create',
       method: 'POST',
       data: { pid: worker.pid },
     });
@@ -84,14 +85,14 @@ export class RoomService {
       console.log("有房间");
       return {
         ...protoRoom.mediaRoom,
-        serverType: constants.CONSUMER
+        serverType: CONSTANTS.CONSUMER
       }
     } else {
       console.log("没有房间");
       const newRoom = await this.createProducerRoom(data)
       return {
         ...newRoom,
-        serverType: constants.PRODUCER
+        serverType: CONSTANTS.PRODUCER
       }
     }
   }
@@ -105,7 +106,7 @@ export class RoomService {
     
     // 创建 worder service 实例，并调用实例方法 getWorker 查询数据库是否存在 producer worker
     const worker = await this.workerService.getWorker(
-      constants.PRODUCER
+      CONSTANTS.PRODUCER
     );
     if(!worker) return
 
@@ -116,7 +117,7 @@ export class RoomService {
      *    routerId: mediasoupRouter.id
      * } } result
      */
-    const result = await fetchApi({
+    const result = await this.axiosService.fetchApi({
       host: worker.apiHost,
       port: worker.apiPort,
       path: '/room/create',
@@ -148,7 +149,7 @@ export class RoomService {
   }
 
   /**
-   * 根据 room id 查询房间
+   * 根据 room 主键id 查询房间
    * @param { { id: string } } data
    * @returns 
    */
@@ -200,11 +201,10 @@ export class RoomService {
    */
   public getProtooRoom(roomId: string) {
     const protooRoom = RoomService.protooRooms.get(roomId);
-    if (!protooRoom) {
-      this.logger.error('protooRoom not found');
-      return
+    if (protooRoom) {
+      return protooRoom
     }
-    return protooRoom
+    return
   }
   
   /**
@@ -247,7 +247,7 @@ export class RoomService {
     if(!room) return
 
     // 发起 http 获取 rtpCapabilities（根据 routerId 查询 rtpCapabilities）
-    const result = await fetchApi({
+    const result = await this.axiosService.fetchApi({
       host: room.worker.apiHost,
       port: room.worker.apiPort,
       path: '/routers/:routerId',
@@ -341,7 +341,7 @@ export class RoomService {
   }) {
     // 发起 http 请求。根据 routerId 删除 router
     try {
-      await fetchApi({
+      await this.axiosService.fetchApi({
         host: data.worker.apiHost,
         port: data.worker.apiPort,
         path: '/routers/:routerId',
@@ -386,7 +386,7 @@ export class RoomService {
       const room = await this.getRoom(data);
       if(!room) return
 
-      const result = await fetchApi({
+      const result = await this.axiosService.fetchApi({
         host: room.worker.apiHost,
         port: room.worker.apiPort,
         path: '/getrouters',

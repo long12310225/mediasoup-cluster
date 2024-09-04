@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository, getEntityManagerToken } from '@nestjs/typeorm';
 import { types } from 'mediasoup';
-import { fetchApi } from '@/common/fetch'
-import { constants } from '@/common/constants';
+import { CONSTANTS } from '@/common/enum';
 import { MediaRouter } from '@/dao/router/media.router.do';
 import { WorkerService } from '../worker/worker.service';
 import { RoomService } from '../room/room.service';
 import { EntityManager } from 'typeorm';
-import { RedisService, MEDIA_ROUTER } from '@/shared/modules/redis';
+import { RedisService } from 'nestjs-redis';
+import { REDIS_TABLES } from '@/common/enum';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
+import { RoomDto } from '@/dto';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class RouterService {
@@ -22,6 +24,7 @@ export class RouterService {
     private readonly roomService: RoomService,
     private readonly entityManager: EntityManager,
     private readonly redisService: RedisService,
+    private readonly axiosService: AxiosService
   ) {
     this.redis = this.redisService.getClient();
   }
@@ -60,13 +63,14 @@ export class RouterService {
       .leftJoinAndSelect('router.worker', 'worker')
       .where('router.room_id = :roomId', { roomId: data.roomId })
       .andWhere('worker.transportCount < worker.maxTransport')
+      .andWhere('worker.is_alive_serve = :isAliveServe', { isAliveServe: 1 })
       .getOne();
     // console.log("%c Line:63 🎂 查询 router：", "color:#fca650", router);
     
     // 如果有router
     if (router) {
       // 发起 http 访问 consumer 服务器，查询router
-      const result = await fetchApi({
+      const result = await this.axiosService.fetchApi({
         host: router.worker.apiHost,
         port: router.worker.apiPort,
         path: '/routers/:routerId',
@@ -97,16 +101,16 @@ export class RouterService {
   }> {
     // 创建 worder service 实例，并调用实例方法 getWorker 查询数据库是否存在 consumer worker
     const worker = await this.workerService.getWorker(
-      constants.CONSUMER
+      CONSTANTS.CONSUMER
     );
 
     if(!worker) return
 
     // 发送 POST 请求 consumer 服务器（转发）
-    const result = await fetchApi({
+    const result = await this.axiosService.fetchApi({
       host: worker.apiHost,
       port: worker.apiPort,
-      path: '/routers',
+      path: '/routers/create',
       method: 'POST',
       data: { pid: worker.pid },
     });
@@ -135,13 +139,13 @@ export class RouterService {
       await MediaRouter.getRepository().save(mediaRouter);
 
       // 【替换sql】
-      this.redis.saveOne(MEDIA_ROUTER, mediaRouter)
+      this.redis.saveOne(REDIS_TABLES.MEDIA_ROUTER, mediaRouter)
 
     } catch (e) {
       // violates foreign key constraint because room doesn't exist
       // 如果发生异常
       // 发起 http 访问 consumer 服务器，删除该 router 条目
-      fetchApi({
+      this.axiosService.fetchApi({
         host: worker.apiHost,
         port: worker.apiPort,
         path: '/routers/:routerId',
@@ -185,10 +189,10 @@ export class RouterService {
 
   /**
    * 根据 roomId 获取 router
-   * @param data routerId
+   * @param { RoomDto } data roomId
    * @returns 
    */
-  public async getRouterByRoomId(data: { roomId: string }) {
+  public async getRouterByRoomId(data: RoomDto) {
     const router = await MediaRouter.getRepository().findOne({
       relations: { worker: true },
       where: {
@@ -232,7 +236,7 @@ export class RouterService {
     
   //   // 如果有router，移除 consumer 服务的缓存
   //   // 发起 http 访问 consumer 服务器，查询router
-  //   const result = await fetchApi({
+  //   const result = await this.axiosService.fetchApi({
   //     host: router.worker.apiHost,
   //     port: router.worker.apiPort,
   //     path: '/routers/:routerId',
@@ -292,7 +296,7 @@ export class RouterService {
   //          * 向 consumer 服务发起 http 请求【当事务正常执行才会发起】
   //          * 多少个 producer 就发起多少次请求
   //          */
-  //         await fetchApi({
+  //         await this.axiosService.fetchApi({
   //           host: router.worker.apiHost, // consumer
   //           port: router.worker.apiPort, // consumer
   //           path: '/routers/:routerId/destination_pipe_transports',
@@ -342,7 +346,7 @@ export class RouterService {
     const isLock = await this.redis.lock(lockKey, lockValue, 10)
     if (isLock) {
       // 根据 routerId 查出一个 router
-      const router = await this.redis.findOne(MEDIA_ROUTER, data.routerId)
+      const router = await this.redis.findOne(REDIS_TABLES.MEDIA_ROUTER, data.routerId)
       // console.log("%c Line:340 🌰 router", "color:#ed9ec7", router);
     
       if (router && !router.pipedProducers.includes(data.producerId)) {
@@ -363,7 +367,7 @@ export class RouterService {
          * 向 consumer 服务发起 http 请求【当事务正常执行才会发起】
          * 多少个 producer 就发起多少次请求
          */
-        const res = await fetchApi({
+        const res = await this.axiosService.fetchApi({
           host: worker.apiHost, // consumer
           port: worker.apiPort, // consumer
           path: '/routers/:routerId/destination_pipe_transports',
@@ -388,7 +392,7 @@ export class RouterService {
         pipedProducers.push(data.producerId);
         router.pipedProducers = pipedProducers.join(',')
 
-        await this.redis.saveOne(MEDIA_ROUTER, router)
+        await this.redis.saveOne(REDIS_TABLES.MEDIA_ROUTER, router)
 
         this.redis.unlock(lockKey, lockValue)
       }
@@ -435,7 +439,7 @@ export class RouterService {
   //      * 向 consumer 服务发起 http 请求【当事务正常执行才会发起】
   //      * 多少个 producer 就发起多少次请求
   //      */
-  //     const res = await fetchApi({
+  //     const res = await this.axiosService.fetchApi({
   //       host: worker.apiHost, // consumer
   //       port: worker.apiPort, // consumer
   //       path: '/routers/:routerId/destination_pipe_transports',
@@ -516,7 +520,7 @@ export class RouterService {
         }
         // console.log("%c router.service.ts 请求接口 /routers/:routerId/data_destination_pipe_transports 参数 🍷 worker, params", worker, params);
         // 发起 http 请求。触发 pipe_transport
-        const res = await fetchApi({
+        const res = await this.axiosService.fetchApi({
           host: worker.apiHost,
           port: worker.apiPort,
           path: '/routers/:routerId/data_destination_pipe_transports',
@@ -549,7 +553,7 @@ export class RouterService {
     // 如果有router
     if (router) {
       // 发起 http 访问 consumer 服务器，查询router
-      const result = await fetchApi({
+      const result = await this.axiosService.fetchApi({
         host: router.worker.apiHost,
         port: router.worker.apiPort,
         path: '/getrouters',

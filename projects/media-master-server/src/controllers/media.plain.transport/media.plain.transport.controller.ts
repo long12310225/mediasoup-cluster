@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { MediaPlainTransportService } from '@/services/media.plain.transport/media.plain.transport.service';
 import { Params } from '@/common/decorators';
+import { PlainTransportDo } from '@/dto';
 
 @Controller()
 export class MediaPlainTransportController {
@@ -29,7 +30,7 @@ export class MediaPlainTransportController {
    * 根据 transportId 连接 transport
    */
   @Post('/plain_transports/:transportId/connect')
-  connect(@Params() data) {
+  connect(@Params() data: PlainTransportDo) {
     return this.mediaPlainTransportService.connect(data);
   }
 
@@ -37,7 +38,7 @@ export class MediaPlainTransportController {
    * 关闭 consumer
    */
   @Delete('/plain_transports/:transportId')
-  close(@Params() data) {
+  close(@Params() data: PlainTransportDo) {
     return this.mediaPlainTransportService.close(data);
   }
 }
