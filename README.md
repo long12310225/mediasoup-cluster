@@ -1,7 +1,13 @@
-# bonade-saas-video-conference-server 
+# 项目介绍
 
-指定项目安装依赖
+## 安装依赖
+
+```
+pnpm i
+```
+
+### 指定项目安装依赖
 
 ```bash
-pnpm add -S @opentelemetry/instrumentation-http --filter "./projects/media-master-server"
+pnpm add -S mysql --filter "./projects/media-server"
 ```
