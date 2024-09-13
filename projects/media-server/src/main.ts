@@ -20,7 +20,7 @@ class Boot {
   private static _instance = null;
 
   constructor() {
-    // loginnacos();
+    this.port == env.getEnv('SERVER_PORT_MAIN') && loginnacos();
     this.init();
   }
 

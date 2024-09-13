@@ -3,7 +3,7 @@ import { trace, context } from '@opentelemetry/api';
 import { getCurrentDateTime } from '@/common/utils';
 // const pinoElasticSearch = require('pino-elasticsearch');
 
-const loggerOptions: LoggerOptions = {
+let loggerOptions: LoggerOptions = {
   level: 'info',
   formatters: {
     level(label) {
@@ -31,6 +31,18 @@ const loggerOptions: LoggerOptions = {
   },
   timestamp: () => `,"time":"${getCurrentDateTime()}"`,
 };
+
+if (process.env.NODE_ENV === 'dev') {
+  // 开发环境才可以开启
+  Object.assign(loggerOptions, {
+    transport: {
+      target: 'pino-pretty',
+      options: {
+        colorize: true
+      }
+    }
+  })
+}
 
 // 上报至ElasticSearch
 // const streamToElastic = pinoElasticSearch({

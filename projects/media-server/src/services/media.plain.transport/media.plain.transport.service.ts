@@ -3,7 +3,6 @@ import { types } from 'mediasoup';
 import { MediaRouterService } from '../media.router/media.router.service';
 import env from '@/config/env';
 import { PinoLogger } from 'nestjs-pino';
-import { PlainTransportDo } from '@/dto';
 
 @Injectable()
 export class MediaPlainTransportService {
@@ -98,7 +97,12 @@ export class MediaPlainTransportService {
    * @param data 
    * @returns 
    */
-  async connect(data: PlainTransportDo) {
+  async connect(data: {
+    transportId: string;
+    ip: string;
+    port: number;
+    rtcpPort: number;
+  }) {
     // console.log("%c Line:198 🍪 4 连接 transport -- connect data: ", "color:#2eafb0", data);
     
     // 从缓存中取出 transport
@@ -112,7 +116,7 @@ export class MediaPlainTransportService {
       await transport.connect({
         ip: data.ip,
         port: data.port,
-        rtcpPort: data.rtcpport
+        rtcpPort: data.rtcpPort
       });
       return {};
     } catch (e) {
@@ -124,7 +128,7 @@ export class MediaPlainTransportService {
    * 关闭 transport
    * @param data transportId
    */
-  async close(data: PlainTransportDo) {
+  async close(data: { transportId: string }) {
     try {
       // 从缓存 transports 中取出 transport
       const transport = this.get(data.transportId);

@@ -8,7 +8,6 @@ import { MediaWorker } from '../../dao/worker/media.worker.do';
 import { CONSTANTS } from '../../common/enum';
 import { WebRtcTransportData } from '@/types';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
-import { CreateTransportDo, TransportDo, PlainTransportDo } from '@/dto';
 import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
@@ -27,7 +26,11 @@ export class TransportService {
    * @param data 
    * @returns 
    */
-  public async createProducerTransport(data: CreateTransportDo): Promise<WebRtcTransportData> {
+  public async createProducerTransport(data: {
+    roomId: string;
+    webRtcTransportOptions: any;
+    peerId?: string;
+  }): Promise<WebRtcTransportData> {
     // 根据 roomId 获取 room
     const room = await this.roomService.getRoom({
       roomId: data.roomId,
@@ -133,7 +136,11 @@ export class TransportService {
    * @param data 
    * @returns 
    */
-  public async createConsumerTransport(data: CreateTransportDo): Promise<WebRtcTransportData> {
+  public async createConsumerTransport(data: {
+    roomId: string;
+    webRtcTransportOptions: any;
+    peerId?: string;
+  }): Promise<WebRtcTransportData> {
     const timestrap = new Date().getTime()
 
     console.time(`${timestrap} createConsumerTransport函数 this.peerService.getPeer耗时`)
@@ -267,10 +274,10 @@ export class TransportService {
 
   /**
    * producer webRTCTransport restartIce params
-   * @param { TransportDo } data 
+   * @param { { transportId: string } } data 
    * @returns 
    */
-  public async webRtcTransportRestartIceProducer(data: TransportDo) {
+  public async webRtcTransportRestartIceProducer(data: { transportId: string }) {
     // 从数据库找到对应 transport
     const transport = await this.get({ transportId: data.transportId });
     if (!transport) return
@@ -298,10 +305,10 @@ export class TransportService {
 
   /**
    * consumer webRTCTransport restartIce params
-   * @param { TransportDo } data 
+   * @param { { transportId: string } } data 
    * @returns 
    */
-  public async webRtcTransportRestartIceConsumer(data: TransportDo) {
+  public async webRtcTransportRestartIceConsumer(data: { transportId: string }) {
     // 从数据库找到对应 transport
     const transport = await this.get({ transportId: data.transportId });
     if(!transport) return
@@ -350,7 +357,7 @@ export class TransportService {
    *  }
    * } media_transport 表中一条 transport 数据
    */
-  public async get(data: TransportDo) {
+  public async get(data: { transportId: string }) {
     // 查找数据库
     const transport = await MediaTransport
       .getRepository()
@@ -429,10 +436,10 @@ export class TransportService {
 
   /**
    * 根据 transportId 关闭指定 transport
-   * @param { TransportDo } data 
+   * @param data 
    * @returns 
    */
-  public async close(data: TransportDo) {
+  public async close(data: { transportId: string }) {
     const transport = await this.get(data);
     if (!transport) return
     
@@ -527,7 +534,12 @@ export class TransportService {
    * @param data 
    * @returns {}
    */
-  public async connectPlainTransport(data: PlainTransportDo) {
+  public async connectPlainTransport(data: {
+    transportId: string;
+    ip: string;
+    port: number;
+    rtcpport: number;
+  }) {
     // console.log("%c Line:198 🍪 4 连接 transport -- connectPlainTransport data: ", "color:#2eafb0", data);
     
     // 从数据库找到对应 transport

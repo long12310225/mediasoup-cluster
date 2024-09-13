@@ -27,9 +27,9 @@ export class PlainTransportDo {
   transportId: string;
   
   @IsString()
-  ip?: string;
+  ip: string;
   
-  port?: number;
+  port: number;
   
-  rtcpport?: number;
+  rtcpport: number;
 }

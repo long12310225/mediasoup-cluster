@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { TransportService } from '../../services/transport/transport.service';
 import { Params } from '@/common/decorators';
-import { CreateTransportDo } from '@/dto';
 
 @Controller()
 export class TransportController {
@@ -24,7 +23,7 @@ export class TransportController {
    * @returns
    */
   @Post('/router/:routerId/consumer_transports')
-  createConsumer(@Param() data: CreateTransportDo) {
+  createConsumer(@Param() data) {
     return this.transportService.createConsumerTransport(data);
   }
 
@@ -34,7 +33,7 @@ export class TransportController {
    * @returns
    */
   @Post('/rooms/:roomId/producer_transports')
-  createProducer(@Param() data: CreateTransportDo) {
+  createProducer(@Param() data) {
     return this.transportService.createProducerTransport(data)
   }
 

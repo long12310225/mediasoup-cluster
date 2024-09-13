@@ -1,3 +1,4 @@
+import { logger } from './../logger/logger';
 import { Injectable } from '@nestjs/common';
 import { Method } from 'axios';
 import * as https from 'https';
@@ -11,6 +12,7 @@ import {
 import { HttpService } from 'nestjs-axios';
 import * as chalk from 'chalk';
 import { MediaWorker } from '@/dao/worker/media.worker.do';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class AxiosService {
@@ -19,7 +21,11 @@ export class AxiosService {
     rejectUnauthorized: false,
   });
 
-  constructor(protected readonly httpService: HttpService) { 
+  constructor(
+    private readonly logger: PinoLogger,
+    protected readonly httpService: HttpService
+  ) { 
+    this.logger.setContext(AxiosService.name)
     this.init();
   }
 
@@ -58,9 +64,8 @@ export class AxiosService {
         // 响应异常
         if (error.isAxiosError) {
           if (error?.address && error?.port) {
-            console.warn(`${chalk.red(`${error?.address}:${error?.port} 服务异常, 请检查！！！`)}`);
-            console.warn(`${chalk.red(`${error?.address}:${error?.port} 服务异常, 请检查！！！`)}`);
-            console.warn(`${chalk.red(`${error?.address}:${error?.port} 服务异常, 请检查！！！`)}`);
+            // this.logger.error(`${error?.address}:${error?.port} 服务异常, 请检查！！！`)
+            console.log(`${chalk.red(`${error?.address}:${error?.port} 服务异常, 请检查！！！`)}`);
             
             const workerList = (await MediaWorker.getRepository().findBy({
               apiHost: error.address,
@@ -112,8 +117,9 @@ export class AxiosService {
         data: body,
         httpsAgent: this.httpsAgent,
       });
+
     } catch (error) {
-      console.log('请求异常, 请检查: ', 'color:#3f7cff', error);
+      console.log('请求异常, 请检查: ', error);
       return void 0;
     }
   }

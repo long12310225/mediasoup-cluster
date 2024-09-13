@@ -45,28 +45,11 @@
     "@opentelemetry/propagator-b3": "1.24.1",
     "@opentelemetry/sdk-node": "0.51.1",
     "@opentelemetry/sdk-trace-base": "1.24.1",
-<<<<<<< HEAD:projects/media-master-server/package.json
-    "@opentelemetry/api": "1.8.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.46.0",
-    "@opentelemetry/context-async-hooks": "1.24.1",
-    "@opentelemetry/core": "^1.24.1",
-    "@opentelemetry/exporter-prometheus": "^0.51.1",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.51.1",
-    "@opentelemetry/host-metrics": "^0.35.1",
-    "@opentelemetry/instrumentation-express": "^0.38.0",
-    "@opentelemetry/instrumentation-graphql": "^0.40.0",
-    "@opentelemetry/instrumentation-nestjs-core": "^0.37.1",
-    "@opentelemetry/instrumentation-pino": "^0.39.0",
-    "@opentelemetry/propagator-b3": "1.24.1",
-    "@opentelemetry/sdk-node": "^0.51.1",
-    "@opentelemetry/sdk-trace-base": "1.24.1",
-=======
     "@opentelemetry/exporter-jaeger": "1.9.0",
     "@opentelemetry/resources": "1.9.0",
     "@opentelemetry/semantic-conventions": "1.9.0",
     "@sitespeed.io/throttle": "^0.5.4",
     "awaitqueue": "^2.3.3",
->>>>>>> 8b27c19e711ec6a5e2937caafb5890a5843b3aab:projects/media-server/package.json
     "axios": "^0.21.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
@@ -74,15 +57,11 @@
     "fastify": "^4.17.0",
     "helmet": "^5.0.2",
     "internal-ip": "^6.2.0",
-<<<<<<< HEAD:projects/media-master-server/package.json
-    "mediasoup": "3.14.7",
-=======
     "ioredis": "5.0.4",
     "mediasoup": "3.14.8",
     "mysql": "^2.18.1",
     "nacos": "2.6.0",
     "nestjs-axios": "workspace:^1.0.0",
->>>>>>> 8b27c19e711ec6a5e2937caafb5890a5843b3aab:projects/media-server/package.json
     "nestjs-otel": "^6.1.1",
     "nestjs-pino": "^4.1.0",
     "nestjs-redis": "workspace:^1.0.0",
@@ -94,24 +73,11 @@
     "protoo-server": "^4.0.5",
     "public-ip": "^6.0.2",
     "reflect-metadata": "^0.2.2",
-<<<<<<< HEAD:projects/media-master-server/package.json
-    "rimraf": "^3.0.2",
-    "rxjs": "^7.2.0",
-    "typeorm": "^0.3.20",
-    "nacos": "^2.6.0",
-    "protoo-server": "^4.0.5",
-    "@sitespeed.io/throttle": "^0.5.4",
-    "awaitqueue": "^2.3.3",
-    "body-parser": "^1.19.0",
-    "colors": "^1.4.0",
-    "debug": "^4.3.1"
-=======
     "rimraf": "^5.0.5",
     "rxjs": "7.2.0",
     "typeorm": "^0.3.20",
     "uuid": "^10.0.0",
     "websocket": "^1.0.33"
->>>>>>> 8b27c19e711ec6a5e2937caafb5890a5843b3aab:projects/media-server/package.json
   },
   "devDependencies": {
     "@nestjs/cli": "^10.3.2",

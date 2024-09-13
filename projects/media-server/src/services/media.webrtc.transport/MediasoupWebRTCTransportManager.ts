@@ -73,7 +73,7 @@ export class MediasoupWebRTCTransportManager {
         // preferUdp: true,
         ...data.webRtcTransportOptions
       }
-      console.log("%c Line:69 🍡 router.createWebRtcTransport params", "color:#7f2b82", params);
+      // console.log("%c Line:69 🍡 router.createWebRtcTransport params", "color:#7f2b82", params);
       console.time(chalk.greenBright(`${timestrap} MediasoupWebRTCTransportManager router.createWebRtcTransport 耗时`))
       const transport = await router.createWebRtcTransport(params);
       console.timeEnd(chalk.greenBright(`${timestrap} MediasoupWebRTCTransportManager router.createWebRtcTransport 耗时`))
