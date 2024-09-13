@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { types } from 'mediasoup';
 import { ConsumerMediaWebRTCTransport } from '../media.webrtc.transport/consumer.media.webrtc.transport.service';
 import { MediaRouterService } from '../media.router/media.router.service';
-import { fetchApiMaster } from '@/common/fetch';
 import { PinoLogger } from 'nestjs-pino';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class MediaDataConsumerService {
@@ -12,6 +12,7 @@ export class MediaDataConsumerService {
 
   constructor(
     private readonly logger: PinoLogger,
+    private readonly axiosService: AxiosService,
     private readonly mediasoupConsumerWebRTCTransport: ConsumerMediaWebRTCTransport,
     private readonly mediaRouterService: MediaRouterService,
   ) {
@@ -83,7 +84,7 @@ export class MediaDataConsumerService {
       // Remove from its map.
       // dataConsumerPeer.data.dataConsumers.delete(dataConsumer.id)
       // 发起 http 请求
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/peer/dataConsumer/handle',
         method: 'POST',
         data: {
@@ -99,7 +100,7 @@ export class MediaDataConsumerService {
     dataConsumer.on('dataproducerclose', () => {
       // Remove from its map.
       // dataConsumerPeer.data.dataConsumers.delete(dataConsumer.id)
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/peer/dataConsumer/handle',
         method: 'POST',
         data: {
@@ -112,7 +113,7 @@ export class MediaDataConsumerService {
       });
 
       // dataConsumerPeer.notify('dataConsumerClosed', { dataConsumerId: dataConsumer.id }).catch(() => {})
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/message/notify',
         method: 'POST',
         data: {
@@ -129,7 +130,7 @@ export class MediaDataConsumerService {
   handleBroadcastDataConsumer(dataConsumer, broadcasterId) {
     dataConsumer.on('transportclose', () => {
       // Remove from its map.
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/broadcast/dataConsumer/handle',
         method: 'POST',
         data: {
@@ -144,7 +145,7 @@ export class MediaDataConsumerService {
 
     dataConsumer.on('dataproducerclose', () => {
       // Remove from its map.
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/broadcast/dataConsumer/handle',
         method: 'POST',
         data: {

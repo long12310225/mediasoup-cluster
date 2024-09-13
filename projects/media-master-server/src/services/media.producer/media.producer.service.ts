@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { types } from 'mediasoup';
 import env from '@/config/env';
 import { ProducerMediaWebRTCTransport } from '../media.webrtc.transport/producer.media.webrtc.transport.service';
-import { fetchApiMaster } from '@/common/fetch';
 import { PinoLogger } from 'nestjs-pino';
 import { CreateProducerDo, ProducerDo } from '@/dto';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class MediaProducerService {
@@ -13,6 +13,7 @@ export class MediaProducerService {
 
   constructor(
     private readonly logger: PinoLogger,
+    private readonly axiosService: AxiosService,
     private readonly mediasoupProducerWebRTCTransport: ProducerMediaWebRTCTransport
   ) { 
     this.logger.setContext(MediaProducerService.name)
@@ -70,7 +71,7 @@ export class MediaProducerService {
         //   .notify('producerScore', { producerId: producer.id, score }) // 通知生产者，传输质量分数
         //   .catch(() => {})
         
-        fetchApiMaster({
+        this.axiosService.fetchApiMaster({
           path: '/message/notify',
           method: 'POST',
           data: {

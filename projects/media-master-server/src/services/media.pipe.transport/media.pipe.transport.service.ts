@@ -57,7 +57,7 @@ export class MediaPipeTransportService {
     sourceRouterId: string;
     sourceProducerId: string; // prucuder 待消费的 producerId
   }) {
-    console.log("1 🍋 checkToPipe 执行接口 /routers/:routerId/destination_pipe_transports 的方法 data", data);
+    // console.log("1 🍋 checkToPipe 执行接口 /routers/:routerId/destination_pipe_transports 的方法 data", data);
     
     // consumer 服务创建 pipeTransport
     const transport: types.PipeTransport = await this.create(data);

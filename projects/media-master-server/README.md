@@ -1,32 +1,30 @@
 # 项目介绍
 
-## 安装
-
-```
-npm install
-or
-yarn
-```
-
 ## 运行
 
-```
-npm start
+```bash
+# 运行主服务
+pnpm run dev
+# 运行生产服务（生产）
+pnpm run dev:producer
+# 运行从服务（消费）
+pnpm run dev:consumer
 ```
 
 ## 项目目录
 
 ```bash
+sh                     脚本文件
 src
  |-- common            用于存放全局性的其他拓展功能
  |-- config            用于存放全局的配置信息
  |-- controllers       用于存放controller，与modules一一对应
  |   |-- xxx
  |   |-- yyy
- |-- dao               用于存放dao，与modules一一对应
+ |-- dao               用于存放dao
  |   |-- xxx
  |   |-- yyy
- |-- dto               用于存放dto，与modules一一对应
+ |-- dto               用于存放dto
  |   |-- xxx
  |   |-- yyy
  |-- modules           用于存放module
@@ -36,8 +34,9 @@ src
  |   |-- xxx
  |   |-- yyy
  |-- shared            用于存放基于nest全局功能点的封装内容（如：过滤器、拦截器、管道、模块等）
- |-- app.module.ts     主模块
- |-- main.ts           入口
+ |-- main.module.ts    主服务模块
+ |-- main.ts           主入口
+ |-- slave.module.ts   从服务主模块
 ```
 
 ## 设计概念

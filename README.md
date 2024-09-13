@@ -9,5 +9,5 @@ pnpm i
 ### 指定项目安装依赖
 
 ```bash
-pnpm add -S mysql --filter "./projects/media-server"
+pnpm add -S mysql --filter "./projects/media-master-server"
 ```

@@ -18,8 +18,7 @@ class Env {
   private localEnvConfig = null;
 
   constructor() {
-    console.log("%c Line:16 🌰 process.env.ENV", "color:#fca650", process.env.NODE_ENV);
-    console.log(chalk.yellow(`${Env.TAG}: 开始载入环境变量配置，准备验证...`));
+    console.log(chalk.yellow(`${Env.TAG}: 开始载入${process.env.NODE_ENV}环境变量配置，准备验证...`));
     if (!ENVS.includes(Env.envPath)) {
       const msg = chalk.red(
         `${

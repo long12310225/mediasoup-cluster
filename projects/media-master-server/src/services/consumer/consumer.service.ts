@@ -5,7 +5,6 @@ import { TransportService } from '@/services/transport/transport.service';
 import { RouterService } from '../router/router.service';
 import { MediaConsumer } from '@/dao/consumer/media.consumer.do';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
-import { CreateConsumerDo, ConsumerDo } from '@/dto';
 import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
@@ -163,7 +162,7 @@ export class ConsumerService {
    * @param data 
    * @returns 
    */
-  public async pause(data: ConsumerDo) {
+  public async pause(data: { consumerId: string }) {
     // 获取 consumer
     const consumer = await this.get(data);
     if(!consumer) return
@@ -192,7 +191,7 @@ export class ConsumerService {
    * @param data
    * @returns
    */
-  public async resume(data: ConsumerDo) {
+  public async resume(data: { consumerId: string }) {
     // console.log("%c consumer.service.ts resume data", "color:#465975", data);
 
     // 获取 consumer
@@ -341,7 +340,7 @@ export class ConsumerService {
    * @param data 
    * @returns 
    */
-  public async getStats({ consumerId }: ConsumerDo) {
+  public async getStats({ consumerId }: { consumerId: string }) {
     // 获取 consumer
     const consumer = await this.get({ consumerId });
     if (!consumer) return
@@ -370,7 +369,7 @@ export class ConsumerService {
    * @param data consumerId
    * @returns 
    */
-  public async get(data: ConsumerDo) {
+  public async get(data: { consumerId: string }) {
     // 查询数据库获取 consumer
     const consumer = await MediaConsumer
       .getRepository()
@@ -404,7 +403,7 @@ export class ConsumerService {
     const transport = await this.transportService.get({
       transportId: data.transportId,
     });
-    console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer transport", "color:#f5ce50", transport);
+    // console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer transport", "color:#f5ce50", transport);
     
     if (transport?.type === CONSTANTS.PRODUCER) {
       const params = {
@@ -422,7 +421,7 @@ export class ConsumerService {
         method: 'POST',
         data: params,
       });
-      console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer result", "color:#f5ce50", result);
+      // console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer result", "color:#f5ce50", result);
       
       if(!result) return
 
@@ -448,11 +447,11 @@ export class ConsumerService {
    * @param data
    * @returns
    */
-  public async broadcasterConsumerResume(data: ConsumerDo) {
+  public async broadcasterConsumerResume(data: { consumerId: string }) {
 
     // 获取 consumer
     const consumer = await this.get(data);
-    console.log("%c Line:373 🌰 6 消费 consumer -- broadcasterConsumerResume consumer", "color:#f5ce50", consumer);
+    // console.log("%c Line:373 🌰 6 消费 consumer -- broadcasterConsumerResume consumer", "color:#f5ce50", consumer);
     if (!consumer) return
     
     // 创建 transport service 实例，并调用实例方法 get，获取 transport
@@ -472,7 +471,7 @@ export class ConsumerService {
           consumerId: consumer.id
         },
       });
-      console.log("%c Line:373 🌰 6 消费 consumer -- broadcasterConsumerResume res", "color:#f5ce50", res);
+      // console.log("%c Line:373 🌰 6 消费 consumer -- broadcasterConsumerResume res", "color:#f5ce50", res);
      
       // 返回空对象
       return {};

@@ -350,7 +350,7 @@ export class RouterService {
       // console.log("%c Line:340 🌰 router", "color:#ed9ec7", router);
     
       if (router && !router.pipedProducers.includes(data.producerId)) {
-        console.log("%c Line:345 🥓🥓 !router.pipedProducers.includes(data.producerId)", "color:#6ec1c2", data.producerId);
+        // console.log("%c Line:345 🥓🥓 !router.pipedProducers.includes(data.producerId)", "color:#6ec1c2", data.producerId);
 
         // 通过 router.roomId 获取 room
         const room = await this.roomService.get({

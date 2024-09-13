@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { types } from 'mediasoup';
 import { MediaRouterService } from '../media.router/media.router.service';
 import env from '@/config/env';
-import { fetchApiMaster } from '@/common/fetch'
 import * as chalk from 'chalk';
 import { PinoLogger } from 'nestjs-pino';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class MediasoupWebRTCTransportManager {
@@ -12,6 +12,7 @@ export class MediasoupWebRTCTransportManager {
 
   constructor(
     private readonly logger: PinoLogger,
+    private readonly axiosService: AxiosService,
     private readonly mediaRouterService: MediaRouterService
   ) {
     this.logger.setContext(MediasoupWebRTCTransportManager.name)
@@ -72,7 +73,7 @@ export class MediasoupWebRTCTransportManager {
         // preferUdp: true,
         ...data.webRtcTransportOptions
       }
-      console.log("%c Line:69 🍡 router.createWebRtcTransport params", "color:#7f2b82", params);
+      // console.log("%c Line:69 🍡 router.createWebRtcTransport params", "color:#7f2b82", params);
       console.time(chalk.greenBright(`${timestrap} MediasoupWebRTCTransportManager router.createWebRtcTransport 耗时`))
       const transport = await router.createWebRtcTransport(params);
       console.timeEnd(chalk.greenBright(`${timestrap} MediasoupWebRTCTransportManager router.createWebRtcTransport 耗时`))
@@ -122,7 +123,7 @@ export class MediasoupWebRTCTransportManager {
 
       if (trace.type === 'bwe' && trace.direction === 'out') {
         // 发起 http 请求，像主应用传递事件
-        // fetchApiMaster({
+        // this.axiosService.fetchApiMaster({
         //   path: '/message/notify',
         //   method: 'POST',
         //   data: {

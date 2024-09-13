@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { types } from 'mediasoup';
 import { ProducerMediaWebRTCTransport } from '../media.webrtc.transport/producer.media.webrtc.transport.service';
-import { fetchApiMaster } from '@/common/fetch';
 import { PinoLogger } from 'nestjs-pino';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class MediaDataProducerService {
@@ -10,6 +10,7 @@ export class MediaDataProducerService {
 
   constructor(
     private readonly logger: PinoLogger,
+    private readonly axiosService: AxiosService,
     private readonly mediasoupProducerWebRTCTransport: ProducerMediaWebRTCTransport,
   ) {
     this.logger.setContext(MediaDataProducerService.name)
@@ -71,7 +72,7 @@ export class MediaDataProducerService {
   handleBroadcastDataProducer(dataProducer, broadcasterId) {
     dataProducer.on('transportclose', () => {
       // Remove from its map.
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/broadcast/dataProducer/handle',
         method: 'POST',
         data: {

@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { Params } from '@/common/decorators';
 import { MediaConsumerService } from '../../services/media.consumer/media.consumer.service';
-import { CreateConsumerDo, ConsumerDo } from '@/dto';
 
 @Controller('/consumers')
 export class MediaConsumerController {
@@ -20,7 +19,7 @@ export class MediaConsumerController {
    * 创建 mediasoup consumer
    */
   @Post('/:transportId/consumer')
-  create(@Params() data: CreateConsumerDo) {
+  create(@Params() data) {
     return this.mediaConsumerService.create(data);
   }
 
@@ -28,7 +27,7 @@ export class MediaConsumerController {
    * 根据 consumerId 暂停媒体流
    */
   @Post('/:consumerId/pause')
-  pause(@Params() data: ConsumerDo) {
+  pause(@Params() data) {
     return this.mediaConsumerService.pause(data);
   }
 
@@ -36,7 +35,7 @@ export class MediaConsumerController {
    * 根据 consumerId，resume consumer
    */
   @Post('/:consumerId/resume')
-  resume(@Params() data: ConsumerDo) {
+  resume(@Params() data) {
     return this.mediaConsumerService.resume(data);
   }
 
@@ -44,7 +43,7 @@ export class MediaConsumerController {
    * 根据 consumerId，设置消费首选图层
    */
   @Post('/:consumerId/setPreferredLayers')
-  setPreferredLayers(@Params() data: ConsumerDo) {
+  setPreferredLayers(@Params() data) {
     return this.mediaConsumerService.setPreferredLayers(data);
   }
 
@@ -52,7 +51,7 @@ export class MediaConsumerController {
    * 根据 consumerId，设置消费优先级
    */
   @Post('/:consumerId/setPriority')
-  setPriority(@Params() data: ConsumerDo) {
+  setPriority(@Params() data) {
     return this.mediaConsumerService.setPriority(data);
   }
 
@@ -60,12 +59,12 @@ export class MediaConsumerController {
    * 根据 consumerId，设置请求消费关键帧
    */
   @Post('/:consumerId/requestKeyFrame')
-  requestKeyFrame(@Params() data: ConsumerDo) {
+  requestKeyFrame(@Params() data) {
     return this.mediaConsumerService.requestKeyFrame(data);
   }
 
   @Post('/:consumerId/getStats')
-  getStats(@Params() data: ConsumerDo) {
+  getStats(@Params() data) {
     return this.mediaConsumerService.getStats(data);
   }
 }

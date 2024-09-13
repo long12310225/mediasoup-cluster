@@ -13,7 +13,6 @@ export class ServeService {
     serve.host = env.getEnv('LISTEN_HOST') || '127.0.0.1';
     serve.port = Number(process.env.PORT || 3000);
     serve.isAliveServe = 1;
-    console.log("%c Line:13 🍒 serve", "color:#b03734", serve);
     await Serve.getRepository().save(serve);
   }
 }

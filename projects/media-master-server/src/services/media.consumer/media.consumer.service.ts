@@ -3,9 +3,8 @@ import { types } from 'mediasoup';
 import { ConsumerMediaWebRTCTransport } from '../media.webrtc.transport/consumer.media.webrtc.transport.service';
 import { MediaRouterService } from '../media.router/media.router.service';
 import { MediaPlainTransportService } from '../media.plain.transport/media.plain.transport.service';
-import { fetchApiMaster } from '@/common/fetch'
 import { PinoLogger } from 'nestjs-pino';
-import { CreateConsumerDo, ConsumerDo } from '@/dto';
+import { AxiosService } from '@/shared/modules/axios';
 
 @Injectable()
 export class MediaConsumerService {
@@ -14,6 +13,7 @@ export class MediaConsumerService {
 
   constructor(
     private readonly logger: PinoLogger,
+    private readonly axiosService: AxiosService,
     private readonly mediasoupConsumerWebRTCTransport: ConsumerMediaWebRTCTransport,
     private readonly mediaPlainTransportService: MediaPlainTransportService,
     private readonly mediaRouterService: MediaRouterService,
@@ -24,9 +24,22 @@ export class MediaConsumerService {
   /**
    * 创建 mediasoup consumer
    * @param data 
-   * @returns { CreateConsumerDo } consumer 对象中的信息
+   * @returns { {
+   *   id: consumer.id,
+   *   kind: consumer.kind,
+   *   rtpParameters: consumer.rtpParameters,
+   *   type: consumer.type,
+   *   producerPaused: consumer.producerPaused,
+   * } } consumer 对象中的信息
    */
-  async create(data: CreateConsumerDo) {
+  async create(data: {
+    routerId: string;
+    transportId: string;
+    producerId: string;
+    rtpCapabilities: types.RtpCapabilities;
+    peerId?: string;
+    broadcasterId?: string;
+  }) {
     // 获取 router
     const router = this.mediaRouterService.get(data.routerId);
 
@@ -50,7 +63,7 @@ export class MediaConsumerService {
       transport = this.mediaPlainTransportService.get(
         data.transportId
       );
-      console.log("%c Line:373 🥥 5 创建 consumer -- create get transport: ", "color:#f5ce50", transport);
+      // console.log("%c Line:373 🥥 5 创建 consumer -- create get transport: ", "color:#f5ce50", transport);
     }
     
     if (!transport) return
@@ -74,7 +87,7 @@ export class MediaConsumerService {
 
     // 缓存 consumer
     MediaConsumerService.consumers.set(consumer.id, consumer);
-    console.log("%c Line:373 🥥 5 创建 consumer -- create MediaConsumerService.consumers: ", "color:#f5ce50", MediaConsumerService.consumers);
+    // console.log("%c Line:373 🥥 5 创建 consumer -- create MediaConsumerService.consumers: ", "color:#f5ce50", MediaConsumerService.consumers);
      
     if (data?.peerId) {
       this.handleConsumer(consumer, data?.peerId);
@@ -102,7 +115,7 @@ export class MediaConsumerService {
     // consumerPeer.data.consumers.delete(consumer.id)
     consumer.on('transportclose', () => {
       // 发起 http 请求，向主应用传递事件
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/peer/consumer/handle',
         method: 'POST',
         data: {
@@ -118,7 +131,7 @@ export class MediaConsumerService {
     consumer.on('producerclose', () => {
       // consumerPeer.data.consumers.delete(consumer.id)
       // 发起 http 请求，向主应用传递事件
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/peer/consumer/handle',
         method: 'POST',
         data: {
@@ -134,7 +147,7 @@ export class MediaConsumerService {
       // consumerPeer.notify('consumerClosed', {
       //   consumerId: consumer.id
       // }).catch(() => { })
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/message/notify',
         method: 'POST',
         data: {
@@ -148,11 +161,11 @@ export class MediaConsumerService {
     })
 
     consumer.on('producerpause', () => {
-      console.log("%c Line:151 🌽", "color:#4fff4B");
+      // console.log("%c Line:151 🌽", "color:#4fff4B");
       // consumerPeer.notify('consumerPaused', {
       //   consumerId: consumer.id
       // }).catch(() => { })
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/message/notify',
         method: 'POST',
         data: {
@@ -166,11 +179,11 @@ export class MediaConsumerService {
     })
 
     consumer.on('producerresume', () => {
-      console.log("%c Line:170 🌮", "color:#42b983");
+      // console.log("%c Line:170 🌮", "color:#42b983");
       // consumerPeer.notify('consumerResumed', {
       //   consumerId: consumer.id
       // }).catch(() => { })
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/message/notify',
         method: 'POST',
         data: {
@@ -189,7 +202,7 @@ export class MediaConsumerService {
       //   consumerId: consumer.id, score
       // }).catch(() => { })
       
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/message/notify',
         method: 'POST',
         data: {
@@ -211,7 +224,7 @@ export class MediaConsumerService {
     //   //   temporalLayer: layers ? layers.temporalLayer : null,
     //   // }).catch(() => { })
 
-    //   // fetchApiMaster({
+    //   // this.axiosService.fetchApiMaster({
     //   //   path: '/message/notify',
     //   //   method: 'POST',
     //   //   data: {
@@ -234,7 +247,7 @@ export class MediaConsumerService {
   handleBroadcastConsumer(consumer, broadcasterId) {
     consumer.on('transportclose', () => {
       // 发起 http 请求，向主应用传递事件
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/broadcast/consumer/handle',
         method: 'POST',
         data: {
@@ -249,7 +262,7 @@ export class MediaConsumerService {
 
     consumer.on('producerclose', () => {
       // 发起 http 请求，向主应用传递事件
-      fetchApiMaster({
+      this.axiosService.fetchApiMaster({
         path: '/broadcast/consumer/handle',
         method: 'POST',
         data: {
@@ -269,11 +282,11 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async pause(data: ConsumerDo) {
+  async pause(data: { consumerId: string }) {
     try {
       // 获取 consumer 
       const consumer = this.get(data);
-      console.log("%c Line:92 测试 consumer pause", "color:#ffdd4d", consumer);
+      // console.log("%c Line:92 测试 consumer pause", "color:#ffdd4d", consumer);
       if (!consumer) return
       // 调用 consumer 的 pause 方法，暂停媒体流
       await consumer.pause();
@@ -289,12 +302,12 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async resume(data: ConsumerDo) {
+  async resume(data: { consumerId: string }) {
     try {
-      console.log("%c Line:373 🌰 6 消费 consumer -- resume data", "color:#f5ce50", data);
+      // console.log("%c Line:373 🌰 6 消费 consumer -- resume data", "color:#f5ce50", data);
       // 从缓存中取出 consumer
       const consumer = this.get(data);
-      console.log("%c Line:373 🌰 6 消费 consumer -- resume consumer", "color:#f5ce50", consumer);
+      // console.log("%c Line:373 🌰 6 消费 consumer -- resume consumer", "color:#f5ce50", consumer);
       if (!consumer) return
 
       // 取消暂停服务器端消费者
@@ -312,7 +325,7 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async getStats(data: ConsumerDo) {
+  async getStats(data: { consumerId: string }) {
     try {
       // 从缓存中取出 consumer
       const consumer = this.get(data);
@@ -331,7 +344,7 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async setPriority({ consumerId, priority }: ConsumerDo) {
+  async setPriority({ consumerId, priority }: { consumerId: string, priority: any}) {
     try {
       // 从缓存中取出 consumer
       const consumer = this.get({ consumerId });
@@ -351,7 +364,11 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async setPreferredLayers({ consumerId, spatialLayer, temporalLayer }: ConsumerDo) {
+  async setPreferredLayers({ consumerId, spatialLayer, temporalLayer }: {
+    consumerId: string,
+    spatialLayer: any,
+    temporalLayer: any
+  }) {
     try {
       // 从缓存中取出 consumer
       const consumer = this.get({ consumerId });
@@ -370,7 +387,9 @@ export class MediaConsumerService {
    * @param data 
    * @returns 
    */
-  async requestKeyFrame({ consumerId }: ConsumerDo) {
+  async requestKeyFrame({ consumerId }: {
+    consumerId: string,
+  }) {
     try {
       // 从缓存中取出 consumer
       const consumer = this.get({ consumerId });
@@ -389,7 +408,7 @@ export class MediaConsumerService {
    * @param data consumerId
    * @returns 
    */
-  get(data: ConsumerDo) {
+  get(data: { consumerId: string }) {
     // 从缓存中取出 consumer
     const consumer = MediaConsumerService.consumers.get(data.consumerId);
     if (!consumer) {

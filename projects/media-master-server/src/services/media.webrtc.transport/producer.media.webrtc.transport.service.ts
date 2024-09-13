@@ -44,7 +44,7 @@ export class ProducerMediaWebRTCTransport extends MediasoupWebRTCTransportManage
    * @returns iceParameters
    */
   async webRTCTransportRestartIce({ transportId }: { transportId: string }) {
-    console.log("%c producer.media.webrtc.transport.service webRTCTransportRestartIce");
+    // console.log("%c producer.media.webrtc.transport.service webRTCTransportRestartIce");
 
     // 从缓存中取出 transport
     const webRTCTransport = ProducerMediaWebRTCTransport.transports.get(transportId);
@@ -55,7 +55,7 @@ export class ProducerMediaWebRTCTransport extends MediasoupWebRTCTransportManage
     }
 
     const iceParameters = await webRTCTransport.restartIce()
-    console.log("%c Line:50 🥥 producer iceParameters", "color:#f5ce50", iceParameters);
+    // console.log("%c Line:50 🥥 producer iceParameters", "color:#f5ce50", iceParameters);
     return iceParameters;
   }
 

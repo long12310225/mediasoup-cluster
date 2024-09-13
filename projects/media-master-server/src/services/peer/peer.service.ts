@@ -1,4 +1,3 @@
-import { logger } from '../../shared/modules/logger/logger';
 import { Injectable } from "@nestjs/common";
 import { Peer } from "@/dao/peer/peer.do";
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';

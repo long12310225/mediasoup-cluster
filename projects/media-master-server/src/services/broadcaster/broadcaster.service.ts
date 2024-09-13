@@ -197,7 +197,7 @@ export class BroadcasterService {
         const transport = await this.transportService.createPlainTransport(data)
         // 缓存到信令服务内存中
         broadcaster.data.transports.set(transport.id, transport)
-        console.log("%c Line:198 🍤 3 创建transport -- broadcaster.data.transports", "color:#2eafb0", broadcaster.data.transports);
+        // console.log("%c Line:198 🍤 3 创建transport -- broadcaster.data.transports", "color:#2eafb0", broadcaster.data.transports);
 
         return transport
       }
@@ -382,7 +382,7 @@ export class BroadcasterService {
 
     // Store it.
     broadcaster.data.consumers.set(consumer.id, consumer)
-    console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer broadcaster.data.consumers", "color:#f5ce50", broadcaster.data.consumers);
+    // console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer broadcaster.data.consumers", "color:#f5ce50", broadcaster.data.consumers);
 
     // // Set Consumer events.
     // consumer.on('transportclose', () => {
@@ -432,7 +432,7 @@ export class BroadcasterService {
     broadcasterId: string;
     consumeId: string;
   }) {
-    console.log("%c Line:373 🌰 6 消费 consumer -- consumerResume data", "color:#f5ce50", data);
+    // console.log("%c Line:373 🌰 6 消费 consumer -- consumerResume data", "color:#f5ce50", data);
       
     const broadcaster = BroadcasterService._broadcasters.get(data. broadcasterId)
     if (!broadcaster) {
@@ -446,7 +446,7 @@ export class BroadcasterService {
 
     // get consumer.
     const consumer = broadcaster.data.consumers.get(data.consumeId)
-    console.log("%c Line:373 🌰 6 消费 consumer -- consumerResume consumer", "color:#f5ce50", consumer);
+    // console.log("%c Line:373 🌰 6 消费 consumer -- consumerResume consumer", "color:#f5ce50", consumer);
      
     setTimeout(async () => {
       // await consumer.resume()

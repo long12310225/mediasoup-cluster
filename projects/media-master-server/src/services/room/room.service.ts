@@ -82,13 +82,13 @@ export class RoomService {
     const protoRoom = this.getProtooRoom(data.roomId)
 
     if (protoRoom) {
-      console.log("有房间");
+      this.logger.info("有房间");
       return {
         ...protoRoom.mediaRoom,
         serverType: CONSTANTS.CONSUMER
       }
     } else {
-      console.log("没有房间");
+      this.logger.info("没有房间");
       const newRoom = await this.createProducerRoom(data)
       return {
         ...newRoom,

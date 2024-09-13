@@ -14,10 +14,10 @@ import { DataConsumerModule } from './modules/dataConsumer/dataConsumer.module';
 import { DataProducerModule } from './modules/dataProducer/dataProducer.module';
 import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { OpenTelemetryModule } from 'nestjs-otel';
-import { LoggerModule } from './shared/modules/logger/logger.module';
 import { PeerModule } from './modules/peer/peer.module';
 import { RedisModule } from 'nestjs-redis';
 import { BroadcasterModule } from './modules/broadcaster/broadcaster.module';
+import { LoggerModule } from '@/shared/modules/logger';
 import { AxiosModule } from '@/shared/modules/axios';
 
 @Module({
