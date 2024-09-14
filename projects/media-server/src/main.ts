@@ -15,7 +15,7 @@ import { Logger } from 'nestjs-pino';
 
 class Boot {
   // 程序端口号
-  private port = process.env.PORT;
+  private port = process.env.PORT || env.getEnv('SERVER_PORT');
 
   private static _instance = null;
 
@@ -40,8 +40,8 @@ class Boot {
     const moduel =
       this.port == env.getEnv('SERVER_PORT_MAIN') ? MainModule : SlaveModule;
     const httpsOptions = {
-      cert: fs.readFileSync(`src/config/certs/server.crt`),
-      key: fs.readFileSync(`src/config/certs/server.key`),
+      cert: fs.readFileSync(`certs/${env.getEnv('SERVER_CERT')}`),
+      key: fs.readFileSync(`certs/${env.getEnv('SERVER_KEY')}`),
     };
     const app = await NestFactory.create<NestFastifyApplication>(
       moduel,

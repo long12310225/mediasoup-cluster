@@ -11,7 +11,7 @@ export class ServeService {
   public async addServe() {
     const serve = new Serve();
     serve.host = env.getEnv('LISTEN_HOST') || '127.0.0.1';
-    serve.port = Number(process.env.PORT || 3000);
+    serve.port = Number(process.env.PORT || env.getEnv('SERVER_PORT'));
     serve.isAliveServe = 1;
     await Serve.getRepository().save(serve);
   }

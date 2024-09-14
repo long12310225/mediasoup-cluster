@@ -3,8 +3,8 @@
  */
 export const ENVS = [
   'dev',
-  'qa_main',
-  'qa_producer',
-  'qa_consumer',
+  'fat_main',
+  'fat_producer',
+  'fat_consumer',
   'prod'
 ];

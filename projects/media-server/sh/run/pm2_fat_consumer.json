@@ -1,0 +1,27 @@
+{
+  "apps": [
+    { 
+      "name": "media-consumer",
+      "script": "dist/main.js",
+      "watch": false,
+      "min_uptime": "60s",
+      "max_restarts": 3,
+      "time": true,
+      "error_file": "./logs/err.log",
+      "out_file": "./logs/app.log",
+      "ignore_watch" : [
+        "node_modules", 
+        "logs",
+        "public"
+      ],
+      "env_fat": {
+        "NODE_ENV": "fat_consumer",
+        "SLAVE_FOR": "consumer"
+      },
+      "env_prod": {
+        "NODE_ENV": "prod_consumer",
+        "SLAVE_FOR": "consumer"
+      }
+    }
+  ]
+}

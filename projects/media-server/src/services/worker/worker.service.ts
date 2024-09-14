@@ -30,7 +30,7 @@ export class WorkerService {
         apiHost: env.getEnv('LISTEN_HOST') || '127.0.0.1',
       })
       .andWhere('api_port = :apiPort', {
-        apiPort: Number(process.env.PORT || 3000),
+        apiPort: Number(process.env.PORT || env.getEnv('SERVER_PORT')),
       })
       .execute();
   }
@@ -39,7 +39,7 @@ export class WorkerService {
     const models = workers.map((worker) => {
       const dbWorker = new MediaWorker();
       dbWorker.apiHost = env.getEnv('LISTEN_HOST') || '127.0.0.1';
-      dbWorker.apiPort = Number(process.env.PORT || 3000);
+      dbWorker.apiPort = Number(process.env.PORT || env.getEnv('SERVER_PORT'));
       dbWorker.maxTransport =
         Number(env.getEnv('SLAVE_MAX_TRANSPORT_PER_WORKER')) || 100;
       dbWorker.type = process.env.SLAVE_FOR || CONSTANTS.CONSUMER;

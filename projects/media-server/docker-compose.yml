@@ -1,0 +1,50 @@
+version: '3.8'
+services:
+  # 信令服务
+  signal_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: signal_container
+    network_mode: host
+    working_dir: /service
+    volumes:
+      - ./certs:certs
+    environment:
+      NODE_ENV: prod
+      SLAVE_FOR: master
+    privileged: true
+    restart: always
+    command: ["/bin/bash", "-c", "nest start"]
+  # 生产服务
+  producer_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: my_container
+    network_mode: host
+    working_dir: /service
+    volumes:
+      - ./certs:certs
+    environment:
+      NODE_ENV: prod
+      SLAVE_FOR: producer
+    privileged: true
+    restart: always
+    command: ["/bin/bash", "-c", "nest start"]
+  # 消费服务
+  consumer_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: my_container
+    network_mode: host
+    working_dir: /service
+    volumes:
+      - ./certs:certs
+    environment:
+      NODE_ENV: prod
+      SLAVE_FOR: consumer
+    privileged: true
+    restart: always
+    command: ["/bin/bash", "-c", "nest start"]

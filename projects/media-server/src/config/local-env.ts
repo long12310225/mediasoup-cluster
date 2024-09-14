@@ -20,8 +20,8 @@ export default class LocalEnv {
   @IsNotEmpty()
   readonly PRO_DOC: boolean;
 
-  @Expose()
-  @IsNotEmpty()
-  readonly WEB_OSS: boolean;
+  // @Expose()
+  // @IsNotEmpty()
+  // readonly WEB_OSS: boolean;
 
 }

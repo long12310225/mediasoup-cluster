@@ -1,0 +1,27 @@
+{
+  "apps": [
+    { 
+      "name": "media-main",
+      "script": "dist/main.js",
+      "watch": false,
+      "min_uptime": "60s",
+      "max_restarts": 3,
+      "time": true,
+      "error_file": "./logs/err.log",
+      "out_file": "./logs/app.log",
+      "ignore_watch" : [
+        "node_modules", 
+        "logs",
+        "public"
+      ],
+      "env_fat": {
+        "NODE_ENV": "fat_main",
+        "SLAVE_FOR": "master"
+      },
+      "env_prod": {
+        "NODE_ENV": "prod_main",
+        "SLAVE_FOR": "master"
+      }
+    }
+  ]
+}
