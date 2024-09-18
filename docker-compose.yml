@@ -1,0 +1,55 @@
+version: '3.8'
+services:
+  # 信令服务
+  signal_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: signal_container
+    network_mode: host
+    volumes:
+      - ./projects/media-server/certs:/server/projects/media-server/certs:ro
+      - ./projects/media-server/logs:/server/projects/media-server/logs:rw
+      - ./projects/media-server/sh/run:/server/projects/media-server/sh/run:ro
+      - ./projects/media-server/env.fat_main.yaml:/server/projects/media-server/env.fat_main.yaml:rw
+    environment:
+      SLAVE_FOR: master
+    privileged: true
+    restart: always
+    command: ["/bin/bash", "-c", "cd /server/projects/media-server && pnpm run fat:main"]
+  # 生产服务
+  producer_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: producer_container
+    network_mode: host
+    working_dir: /server/projects/media-server
+    volumes:
+      - ./projects/media-server/certs:/server/projects/media-server/certs:ro
+      - ./projects/media-server/logs:/server/projects/media-server/logs:rw
+      - ./projects/media-server/sh/run:/server/projects/media-server/sh/run:ro
+      - ./projects/media-server/env.fat_producer.yaml:/server/projects/media-server/env.fat_producer.yaml:rw
+    environment:
+      SLAVE_FOR: producer
+    privileged: true
+    restart: always
+    command: ["/bin/bash", "-c", "cd /server/projects/media-server && pnpm run fat:producer"]
+  # 消费服务
+  consumer_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: consumer_container
+    network_mode: host
+    working_dir: /server/projects/media-server
+    volumes:
+      - ./projects/media-server/certs:/server/projects/media-server/certs:ro
+      - ./projects/media-server/logs:/server/projects/media-server/logs:rw
+      - ./projects/media-server/sh/run:/server/projects/media-server/sh/run:ro
+      - ./projects/media-server/env.fat_consumer.yaml:/server/projects/media-server/env.fat_consumer.yaml:rw
+    environment:
+      SLAVE_FOR: consumer
+    privileged: true
+    restart: always
+    command: ["/bin/bash", "-c", "cd /server/projects/media-server && pnpm run fat:consumer"]
