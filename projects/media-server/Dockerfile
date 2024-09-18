@@ -9,8 +9,9 @@ RUN \
 WORKDIR /service
 
 COPY package.json .
-COPY server.js .
-COPY config.js .
+COPY tsconfig.json .
+COPY tsconfig.build.json .
+COPY nest-cli.json .
 COPY src ./src
 COPY sh/run ./sh/run
 RUN npm install -g pnpm

@@ -12,7 +12,7 @@ const os = require('os')
 
 module.exports = {
   // Listening hostname (just for `gulp live` task).
-  domain: process.env.DOMAIN || '10.2.110.222',
+  domain: process.env.DOMAIN || '10.2.30.20',
   nacos  :{
 		tokenServer  :{
 			hostname : process.env.NACOS_TOKEN_HOST || 'fatsaasnacos.bndxqc.com',
