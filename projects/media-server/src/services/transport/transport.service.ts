@@ -526,6 +526,9 @@ export class TransportService {
      */
     await MediaTransport.getRepository().save(mediaTransport);
     
+    // 修改 media_worker 表数据
+    MediaWorker.getRepository().increment({ id: room.workerId }, 'transportCount', 1);
+    
     return result;
   }
 

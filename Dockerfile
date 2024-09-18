@@ -32,7 +32,5 @@ COPY projects/media-server/src ./projects/media-server/src
 COPY projects/nestjs-axios ./projects/nestjs-axios
 COPY projects/nestjs-redis ./projects/nestjs-redis
 RUN npm install -g pnpm pm2
-ENV http_proxy=10.2.110.140:26001
-ENV https_proxy=10.2.110.140:26001
 RUN cd projects/media-server && pnpm i && pnpm run build
 
