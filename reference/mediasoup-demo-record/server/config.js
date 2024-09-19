@@ -12,7 +12,7 @@ const os = require('os')
 
 module.exports = {
   // Listening hostname (just for `gulp live` task).
-  domain: process.env.DOMAIN || '10.2.30.20',
+  domain: process.env.DOMAIN || '10.2.30.31',
   nacos  :{
 		tokenServer  :{
 			hostname : process.env.NACOS_TOKEN_HOST || 'fatsaasnacos.bndxqc.com',
@@ -28,7 +28,7 @@ module.exports = {
 		register: {
 			serverName: process.env.NACOS_REGISTER_SERVERNAME || 'bonade-saas-mediasoup',
 			group : process.env.NACOS_REGISTER_GROUP || 'DEFAULT_GROUP',
-			ip        : process.env.NACOS_REGISTER_IP || '10.2.30.20',
+			ip        : process.env.NACOS_REGISTER_IP || '10.2.30.31',
 			port      : process.env.NACOS_REGISTER_PORT || 4443,
 		}
 	},
@@ -53,7 +53,7 @@ module.exports = {
 	// },
   // Signaling settings (protoo WebSocket server and HTTP API server).
   https: {
-    listenIp: process.env.MEDIASOUP_HTTP_LISTEN_IP || '10.2.30.20',
+    listenIp: process.env.MEDIASOUP_HTTP_LISTEN_IP || '10.2.30.31',
     // NOTE: Don't change listenPort (client app assumes 4443).
     listenPort: process.env.PROTOO_LISTEN_PORT || 4443,
     // NOTE: Set your own valid certificate files.
@@ -131,7 +131,7 @@ module.exports = {
     webRtcTransportOptions: {
       listenIps: [
         {
-          ip: process.env.MEDIASOUP_LISTEN_IP || '10.2.30.20',
+          ip: process.env.MEDIASOUP_LISTEN_IP || '10.2.30.31',
           announcedIp: process.env.MEDIASOUP_ANNOUNCED_IP,
         },
       ],
@@ -146,7 +146,7 @@ module.exports = {
     // See https://mediasoup.org/documentation/v3/mediasoup/api/#PlainTransportOptions
     plainTransportOptions: {
       listenIp: {
-        ip: process.env.MEDIASOUP_LISTEN_IP || '10.2.30.20',
+        ip: process.env.MEDIASOUP_LISTEN_IP || '10.2.30.31',
         announcedIp: process.env.MEDIASOUP_ANNOUNCED_IP,
       },
       maxSctpMessageSize: 262144,
