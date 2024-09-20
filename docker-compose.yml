@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3'
 services:
   # 信令服务
   signal_service:
@@ -11,12 +11,12 @@ services:
       - ./projects/media-server/certs:/server/projects/media-server/certs:ro
       - ./projects/media-server/logs:/server/projects/media-server/logs:rw
       - ./projects/media-server/sh/run:/server/projects/media-server/sh/run:ro
-      - ./projects/media-server/env.fat_main.yaml:/server/projects/media-server/env.fat_main.yaml:rw
+      - ./projects/media-server/env.prod_main.yaml:/server/projects/media-server/env.prod_main.yaml:rw
     environment:
       SLAVE_FOR: master
     privileged: true
     restart: always
-    command: ["/bin/bash", "-c", "cd /server/projects/media-server && pnpm run fat:main"]
+    command: ["/bin/bash", "-c", "cd /server/projects/media-server && pnpm run prod:main"]
   # 生产服务
   producer_service:
     build:
@@ -29,12 +29,12 @@ services:
       - ./projects/media-server/certs:/server/projects/media-server/certs:ro
       - ./projects/media-server/logs:/server/projects/media-server/logs:rw
       - ./projects/media-server/sh/run:/server/projects/media-server/sh/run:ro
-      - ./projects/media-server/env.fat_producer.yaml:/server/projects/media-server/env.fat_producer.yaml:rw
+      - ./projects/media-server/env.prod_producer.yaml:/server/projects/media-server/env.prod_producer.yaml:rw
     environment:
       SLAVE_FOR: producer
     privileged: true
     restart: always
-    command: ["/bin/bash", "-c", "cd /server/projects/media-server && pnpm run fat:producer"]
+    command: ["/bin/bash", "-c", "cd /server/projects/media-server && pnpm run prod:producer"]
   # 消费服务
   consumer_service:
     build:
@@ -47,9 +47,9 @@ services:
       - ./projects/media-server/certs:/server/projects/media-server/certs:ro
       - ./projects/media-server/logs:/server/projects/media-server/logs:rw
       - ./projects/media-server/sh/run:/server/projects/media-server/sh/run:ro
-      - ./projects/media-server/env.fat_consumer.yaml:/server/projects/media-server/env.fat_consumer.yaml:rw
+      - ./projects/media-server/env.prod_consumer.yaml:/server/projects/media-server/env.prod_consumer.yaml:rw
     environment:
       SLAVE_FOR: consumer
     privileged: true
     restart: always
-    command: ["/bin/bash", "-c", "cd /server/projects/media-server && pnpm run fat:consumer"]
+    command: ["/bin/bash", "-c", "cd /server/projects/media-server && pnpm run prod:consumer"]

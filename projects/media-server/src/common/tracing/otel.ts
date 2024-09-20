@@ -13,9 +13,9 @@ import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
 import env from '@/config/env';
 
-const serverName = env.getEnv('TRACING_JAEGER_SERVER_NAME')
+const serverName = env.getEnv('TRACING_JAEGER_SERVER_NAME');
 
-export const otelSDK = new NodeSDK({
+const otelSDK = new NodeSDK({
   // name
   resource: new Resource({
     [SemanticResourceAttributes.SERVICE_NAME]: serverName
@@ -23,7 +23,7 @@ export const otelSDK = new NodeSDK({
   spanProcessors: [
     // tracing（上报到jaeger）
     new SimpleSpanProcessor(new JaegerExporter({
-      endpoint: `http://${env.getEnv('TRACING_JAEGER_IP')}:14268/api/traces`,
+      endpoint: `http://${env.getEnv('TRACING_JAEGER_IP')}:${env.getEnv('TRACING_JAEGER_PORT')}/api/traces`,
     })),
   ],
   // logRecordProcessor: new logs.SimpleLogRecordProcessor(new logs.ConsoleLogRecordExporter()),
@@ -50,3 +50,12 @@ process.on('SIGTERM', () => {
     )
     .finally(() => process.exit(0));
 });
+
+export const startOtel = async () => {
+  try {
+    await otelSDK.start();
+  } catch (error) {
+    console.log(error)
+  }
+}
+

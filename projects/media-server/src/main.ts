@@ -1,7 +1,7 @@
 import * as chalk from 'chalk';
 import helmet from 'helmet';
 import * as fs from 'fs';
-import { otelSDK, startSky } from './common/tracing';
+import { startOtel, startSkywalking } from './common/tracing';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
@@ -35,8 +35,8 @@ class Boot {
    * 启动函数
    */
   public async init(): Promise<any> {
-    startSky();
-    await otelSDK.start();
+    startSkywalking();
+    await startOtel();
 
     const moduel =
       this.port == env.getEnv('SERVER_PORT_MAIN') ? MainModule : SlaveModule;
