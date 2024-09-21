@@ -5,9 +5,8 @@ import { readFileSync } from 'fs';
 import { plainToClass } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { ENVS } from './default';
-
-import * as defaultConfig from './default';
 import LocalEnv from './local-env';
+import { getNacosConfig } from '../common/nacos';
 
 class Env {
   private static TAG = 'Environment';
@@ -15,7 +14,7 @@ class Env {
   private static envPath: string = process.env.NODE_ENV;
   
   // 缓存配置表
-  private localEnvConfig = null;
+  private localEnvConfig = {};
 
   constructor() {
     console.log(chalk.yellow(`${Env.TAG}: 开始载入${process.env.NODE_ENV}环境变量配置，准备验证...`));
@@ -36,7 +35,8 @@ class Env {
       `../../env.${Env.envPath.toLocaleLowerCase()}.yaml`,
     );
     // 解析yaml文件
-    this.localEnvConfig = yamlLoad(readFileSync(envFilePath, 'utf8'));
+    this.localEnvConfig = Object.assign({}, this.localEnvConfig, yamlLoad(readFileSync(envFilePath, 'utf8')));
+    // console.log("%c Line:39 🍋 1this.localEnvConfig", "color:#93c0a4", this.localEnvConfig);
 
     if (Env.emptyList.includes(this.localEnvConfig)) {
       const msg = chalk.red(`${Env.TAG}: 配置文件为空，路径: ${envFilePath}`);
@@ -44,6 +44,14 @@ class Env {
     }
 
     this.onValidateLocalEnvFile();
+  }
+
+  public addEnvConfig(config) {
+    // console.log("%c Line:41 🥚 2config", "color:#3f7cff", config);
+    if (config instanceof Object && Object.keys(config).length) { 
+      this.localEnvConfig = Object.assign({}, this.localEnvConfig, config)
+      // console.log("%c Line:45 🍐 3this.localEnvConfig", "color:#7f2b82", this.localEnvConfig);
+    }
   }
 
   /**

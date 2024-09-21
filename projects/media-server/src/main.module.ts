@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 // import { APP_INTERCEPTOR } from '@nestjs/core';
 // import { LogInterceptor } from './common/interceptors/log.interceptor';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { sqlConfig, redisConfig } from './config/sql.config';
+import { getSqlConfig, getRedisConfig } from './config/sql.config';
 import { RoomModule } from './modules/room/room.module';
 import { RouterModule } from './modules/router/router.module';
 import { TransportModule } from './modules/transport/transport.module';
@@ -23,7 +23,6 @@ import { AxiosModule } from '@/shared/modules/axios';
 @Module({
   imports: [
     AxiosModule.forRoot({}),
-    RedisModule.forRoot(redisConfig),
     OpenTelemetryModule.forRoot({
       metrics: {
         hostMetrics: true,
@@ -32,7 +31,12 @@ import { AxiosModule } from '@/shared/modules/axios';
         },
       },
     }),
-    TypeOrmModule.forRoot(sqlConfig),
+    TypeOrmModule.forRootAsync({
+      useFactory: () => getSqlConfig(),
+    }),
+    RedisModule.forRootAsync({
+      useFactory: () => getRedisConfig(),
+    }),
     TypeOrmModule.forFeature([MediaWorker]),
     LoggerModule,
     RoomModule,

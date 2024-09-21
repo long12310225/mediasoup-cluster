@@ -9,7 +9,7 @@ import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import env from '@/config/env';
 import { MainModule } from './main.module';
 import { SlaveModule } from './slave.module';
-import { loginnacos } from './common/nacos';
+import { loginnacos, getNacosConfig } from './common/nacos';
 import { WebSocketService } from './services/websocket/websocket.service';
 import { Logger } from 'nestjs-pino';
 
@@ -20,7 +20,6 @@ class Boot {
   private static _instance = null;
 
   constructor() {
-    this.port == env.getEnv('SERVER_PORT_MAIN') && loginnacos();
     this.init();
   }
 
@@ -35,6 +34,10 @@ class Boot {
    * 启动函数
    */
   public async init(): Promise<any> {
+    this.port == env.getEnv('SERVER_PORT_MAIN') && loginnacos();
+    const confit = await getNacosConfig()
+    env.addEnvConfig(confit)
+    
     startSkywalking();
     await startOtel();
 
