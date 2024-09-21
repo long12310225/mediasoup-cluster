@@ -19,11 +19,15 @@ export class WorkerService {
 
   async init() {
     await mediasoupWorkerManager.init();
-    await this.removeCurrent();
+    await this.removeCurrentServer();
     await this.addWorkers(mediasoupWorkerManager.workers);
+    this.serverListenning();
   }
 
-  removeCurrent() {
+  /**
+   * 从 media_worker 表移除当前服务的行
+   */
+  removeCurrentServer() {
     return MediaWorker.createQueryBuilder()
       .delete()
       .where('api_host = :apiHost', {
@@ -86,5 +90,26 @@ export class WorkerService {
       return;
     }
     return worker;
+  }
+
+  /**
+   * 监听服务状态
+   */
+  serverListenning() {
+    // 关闭服务时触发事件
+    process.on('SIGINT', async () => {
+      this.logger.info('SIGINT event: removeCurrentServer of mediaworker')
+      await this.removeCurrentServer();
+      process.exit(0);
+    });
+    // process.on('SIGTERM', function() {
+    //   console.log('SIGTERM Shutting down server...');
+    // });
+    // process.on('beforeExit', function() {
+    //   console.log('beforeExit Shutting down server...');
+    // });
+    // process.on('exit', function() {
+    //   console.log('exit Shutting down server...');
+    // });
   }
 }
