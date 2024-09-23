@@ -31,7 +31,7 @@ export class WorkerService {
     return MediaWorker.createQueryBuilder()
       .delete()
       .where('api_host = :apiHost', {
-        apiHost: env.getEnv('LISTEN_HOST') || '127.0.0.1',
+        apiHost: env.getEnv('SERVER_IP'),
       })
       .andWhere('api_port = :apiPort', {
         apiPort: Number(process.env.PORT || env.getEnv('SERVER_PORT')),
@@ -42,7 +42,7 @@ export class WorkerService {
   async addWorkers(workers: Array<types.Worker>) {
     const models = workers.map((worker) => {
       const dbWorker = new MediaWorker();
-      dbWorker.apiHost = env.getEnv('LISTEN_HOST') || '127.0.0.1';
+      dbWorker.apiHost = env.getEnv('SERVER_IP');
       dbWorker.apiPort = Number(process.env.PORT || env.getEnv('SERVER_PORT'));
       dbWorker.maxTransport =
         Number(env.getEnv('SLAVE_MAX_TRANSPORT_PER_WORKER')) || 100;

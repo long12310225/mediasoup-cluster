@@ -9,7 +9,7 @@ import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import env from '@/config/env';
 import { MainModule } from './main.module';
 import { SlaveModule } from './slave.module';
-import { loginnacos, getNacosConfig } from './common/nacos';
+import { registryNacos, getNacosConfig } from './common/nacos';
 import { WebSocketService } from './services/websocket/websocket.service';
 import { Logger } from 'nestjs-pino';
 
@@ -34,7 +34,7 @@ class Boot {
    * 启动函数
    */
   public async init(): Promise<any> {
-    this.port == env.getEnv('SERVER_PORT_MAIN') && loginnacos();
+    this.port == env.getEnv('SERVER_PORT_MAIN') && registryNacos();
     const confit = await getNacosConfig()
     env.addEnvConfig(confit)
     

@@ -1,17 +1,18 @@
 const { NacosConfigClient } = require('nacos');
 import axios from 'axios';
+import Logger from '@/common/utils/Logger';
 import env from '@/config/env';
 import { load as yamlLoad } from 'js-yaml';
 
 export const getNacosConfig = async () => {
+  const logger = new Logger('get nacos config')
   try {
-    const data = await (await axios.post(`https://${env.getEnv('N_HOSTNAME')}${env.getEnv('N_PATH')}`)).data
+    const data = (await axios.post(`https://${env.getEnv('N_HOSTNAME')}${env.getEnv('N_PATH')}`)).data;
 
     if (!data?.accessToken) {
+      logger.error('nacos服务异常!!!!')
       return {}
     }
-
-    // console.log("%c Line:9 🍆 res", "color:#e41a6a", data.accessToken);
 
     const client = new NacosConfigClient({
       serverAddr: env.getEnv('N_SERVER_LIST'),
@@ -25,11 +26,11 @@ export const getNacosConfig = async () => {
       env.getEnv('N_NACOS_GROUP'),
     );
     if (!nacosConfig || typeof nacosConfig !== 'string') {
-      console.log('nacos配置有误!!!!!!')
+      logger.error('nacos配置有误!!!!!!')
     }
     const nacosConfigJson = yamlLoad(nacosConfig, 'utf8');
-    return nacosConfigJson
+    return nacosConfigJson;
   } catch (error) {
-    console.log(error)
+    logger.error(error)
   }
 };
