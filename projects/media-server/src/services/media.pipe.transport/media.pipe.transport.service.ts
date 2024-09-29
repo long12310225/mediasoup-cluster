@@ -32,7 +32,7 @@ export class MediaPipeTransportService {
       
       // 通过 router 创建 pipeTransport
       const transport: types.PipeTransport = await router.createPipeTransport({
-        listenIp: env.getEnv('SERVER_IP') || '127.0.0.1',
+        listenIp: env.getEnv('LISTEN_HOST') || '127.0.0.1',
         enableSctp: true,
         numSctpStreams: { OS: 1024, MIS: 1024 },
       });
