@@ -10,6 +10,7 @@ import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class WorkerService {
+
   constructor(
     @InjectRepository(MediaWorker)
     private readonly mediaWorkerDo: MediaWorker,
@@ -86,7 +87,7 @@ export class WorkerService {
       where: { id: data.workerId },
     });
     if (!worker) {
-      this.logger.error('worker not found')
+      this.logger.error('worker表没有这条数据');
       return;
     }
     return worker;
@@ -111,5 +112,47 @@ export class WorkerService {
     // process.on('exit', function() {
     //   console.log('exit Shutting down server...');
     // });
+  }
+
+  /**
+   * 获取 worker 列表
+   */
+  public async getList(data: {
+    serverType: string
+  }) {
+    const workers = await MediaWorker.getRepository().find();
+    if (!workers) {
+      this.logger.error('workers not found')
+      return;
+    }
+    return workers;
+  }
+
+  /**
+   * 删除表中某条数据
+   */
+  public async deleteWorker(data: { workerId: string }) {
+    try {
+      const worker = await this.get(data);
+      if (!worker) {
+        return {
+          msg: '没有该条数据'
+        }
+      } 
+      const res = await MediaWorker.getRepository().delete({
+        id: data.workerId
+      });
+      if (res?.affected) {
+        return {
+          msg: '删除成功'
+        }
+      } else {
+        return {
+          msg: '删除失败'
+        }
+      }
+    } catch (error) {
+      this.logger.error(error)
+    }
   }
 }

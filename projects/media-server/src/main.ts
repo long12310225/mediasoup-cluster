@@ -98,8 +98,8 @@ class Boot {
    * 初始化提示
    */
   private initRunningTips(app): string {
-    let runningTips = `App running at:
-      - Network: ${chalk.green(`https://${env.getEnv('SERVER_IP')}:${env.getEnv('SERVER_PORT')}/`)}`;
+    let runningTips = `${chalk.yellowBright(`App running at: 
+      - Network: https://${env.getEnv('SERVER_IP')}:${this.port}/`)}`;
 
     return runningTips;
   }

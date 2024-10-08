@@ -72,7 +72,7 @@ export class WebSocketService {
    * 创建ws连接
    */
   public runWSServer(appInstance: NestFastifyApplication) { 
-    console.info(chalk.green(`App running at:
+    console.info(chalk.yellowBright(`App running at:
       - wss://${env.getEnv('SERVER_IP_MAIN')}:${env.getEnv('SERVER_PORT_MAIN')}/`));
     
     // 演示

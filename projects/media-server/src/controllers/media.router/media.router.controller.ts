@@ -37,4 +37,8 @@ export class MediaRouterController {
     return this.mediaRouterService.close(data);
   }
 
+  @Get('/getList')
+  getList() {
+    return this.mediaRouterService.getList();
+  }
 }

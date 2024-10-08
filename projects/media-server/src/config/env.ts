@@ -14,7 +14,7 @@ class Env {
   private static envPath: string = process.env.NODE_ENV;
   
   // 缓存配置表
-  private localEnvConfig = {};
+  localEnvConfig = {};
 
   constructor() {
     console.log(chalk.yellow(`${Env.TAG}: 开始载入${process.env.NODE_ENV}环境变量配置，准备验证...`));
@@ -50,7 +50,7 @@ class Env {
     // console.log("%c Line:41 🥚 2config", "color:#3f7cff", config);
     if (config instanceof Object && Object.keys(config).length) { 
       this.localEnvConfig = Object.assign({}, this.localEnvConfig, config)
-      // console.log("%c Line:45 🍐 3this.localEnvConfig", "color:#7f2b82", this.localEnvConfig);
+      console.log("%c Line:45 🍐 3this.localEnvConfig", "color:#7f2b82", this.localEnvConfig);
     }
   }
 

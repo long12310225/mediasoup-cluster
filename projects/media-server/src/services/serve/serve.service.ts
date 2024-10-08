@@ -4,9 +4,6 @@ import env from '../../config/env';
 
 @Injectable()
 export class ServeService {
-  public async init() {
-    await this.addServe();
-  }
 
   public async addServe() {
     const serve = new Serve();
@@ -14,5 +11,9 @@ export class ServeService {
     serve.port = Number(process.env.PORT || env.getEnv('SERVER_PORT'));
     serve.isAliveServe = 1;
     await Serve.getRepository().save(serve);
+  }
+
+  public async getServeStaff(data) {
+    if(data.flag) return env.localEnvConfig;
   }
 }

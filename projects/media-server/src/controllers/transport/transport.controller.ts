@@ -19,8 +19,6 @@ export class TransportController {
 
   /**
    * 创建 consumer transport
-   * @param data
-   * @returns
    */
   @Post('/router/:routerId/consumer_transports')
   createConsumer(@Param() data) {
@@ -29,8 +27,6 @@ export class TransportController {
 
   /**
    * 创建 producer transport
-   * @param data 
-   * @returns
    */
   @Post('/rooms/:roomId/producer_transports')
   createProducer(@Param() data) {
@@ -39,8 +35,6 @@ export class TransportController {
 
   /**
    * 连接 producer
-   * @param data 
-   * @returns 
    */
   @Post('/producer_transports/:transportId/connect')
   connectProducer(@Params() data) {
@@ -57,7 +51,6 @@ export class TransportController {
 
   /**
    * 连接 consumer
-   * @param data 
    */
   @Post('/consumer_transports/:transportId/connect')
   connectConsumer(@Params() data) {
@@ -76,11 +69,18 @@ export class TransportController {
 
   /**
    * 关闭 transport
-   * @param data 
-   * @returns 
    */
   @Delete('/transports/:transportId')
   close(@Params() data) {
     return this.transportService.close(data);
   }
+
+  /**
+   * 查询transport列表
+   */
+  @Get('/transports/getList')
+  getList() {
+    return this.transportService.getList()
+  }
+
 }
