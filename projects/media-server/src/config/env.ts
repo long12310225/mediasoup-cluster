@@ -50,7 +50,7 @@ class Env {
     // console.log("%c Line:41 🥚 2config", "color:#3f7cff", config);
     if (config instanceof Object && Object.keys(config).length) { 
       this.localEnvConfig = Object.assign({}, this.localEnvConfig, config)
-      console.log("%c Line:45 🍐 3this.localEnvConfig", "color:#7f2b82", this.localEnvConfig);
+      // console.log("%c Line:45 🍐 3this.localEnvConfig", "color:#7f2b82", this.localEnvConfig);
     }
   }
 

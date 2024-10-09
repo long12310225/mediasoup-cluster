@@ -18,6 +18,10 @@
         "NODE_ENV": "fat_consumer",
         "SLAVE_FOR": "consumer"
       },
+      "env_uat": {
+        "NODE_ENV": "uat_consumer",
+        "SLAVE_FOR": "consumer"
+      },
       "env_prod": {
         "NODE_ENV": "prod_consumer",
         "SLAVE_FOR": "consumer"

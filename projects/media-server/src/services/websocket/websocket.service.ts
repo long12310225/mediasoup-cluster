@@ -599,6 +599,10 @@ export class WebSocketService {
         // Remove from its map.
         peer.data.producers.delete(producer.id) // 删除
 
+        // 通知 consumer 服务关闭consumer
+        const resu = await this.consumerService.closeConsumer({ producerId })
+        console.log('resu: ============', resu);
+
         accept()
         break;
       }

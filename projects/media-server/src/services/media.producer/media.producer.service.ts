@@ -179,7 +179,8 @@ export class MediaProducerService {
     // 从缓存中取出 producer
     const producer = MediaProducerService.producers.get(data.producerId);
     if (!producer) {
-      this.logger.error('producer not found')
+      this.logger.warn('缓存中没有找到相关 producer');
+      return;
     }
     return producer;
   }
@@ -188,14 +189,16 @@ export class MediaProducerService {
    * 关闭 producer
    * @param data 
    */
-  close(data: ProducerDo) {
+  public async close(data: ProducerDo) {
     try {
       // 获取 producer 
       const producer = this.get(data);
-      if (!producer) return
+      if (!producer) return;
+      // 关闭 producer
       producer.close();
-      // 返回空对象
-      return {};
+      return {
+        msg: "producer closed successfully"
+      };
     } catch (e) {
       this.logger.error(e)
     }

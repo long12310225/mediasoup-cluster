@@ -68,4 +68,12 @@ export class MediaConsumerController {
   getStats(@Params() data: ConsumerDo) {
     return this.mediaConsumerService.getStats(data);
   }
+
+  /**
+   * 关闭 consumer
+   */
+  @Post('/:consumerId/close')
+  close(@Params() data) {
+    return this.mediaConsumerService.close(data);
+  }
 }

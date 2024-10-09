@@ -116,9 +116,10 @@ export class MediaConsumerService {
       });
     })
 
-    consumer.on('producerclose', () => {
-      // consumerPeer.data.consumers.delete(consumer.id)
-      // 发起 http 请求，向主应用传递事件
+    // consumer.observer close事件代替consumer producerclose事件
+    consumer.observer.on("close", () => {
+      this.logger.info('触发 consumer.observer close 事件');
+
       this.axiosService.fetchApiMaster({
         path: '/peer/consumer/handle',
         method: 'POST',
@@ -146,7 +147,7 @@ export class MediaConsumerService {
           peerId
         },
       });
-    })
+    });
 
     consumer.on('producerpause', () => {
       // console.log("%c Line:151 🌽", "color:#4fff4B");
@@ -394,7 +395,7 @@ export class MediaConsumerService {
     // 从缓存中取出 consumer
     const consumer = MediaConsumerService.consumers.get(data.consumerId);
     if (!consumer) {
-      this.logger.error('consumer not found');
+      this.logger.warn('缓存中没有找到相关 consumer');
       return;
     }
     return consumer;
@@ -403,6 +404,25 @@ export class MediaConsumerService {
   getConsumers(data) {
     const mediaConsumers = MediaConsumerService.consumers.keys()
     return mediaConsumers;
+  }
+
+  /**
+   * 关闭 consumer
+   * @param data 
+   */
+  close({ consumerId }: ConsumerDo) {
+    try {
+      // 获取 consumer 
+      const consumer = this.get({ consumerId });
+      if (!consumer) return;
+      // 关闭 consumer
+      consumer.close();
+      return {
+        msg: "consumer closed successfully"
+      };
+    } catch (e) {
+      this.logger.error(e)
+    }
   }
 
 }

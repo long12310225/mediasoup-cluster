@@ -29,4 +29,12 @@ export class ConsumerController {
   resume(@Params() data) { 
     return this.consumerService.resume(data);
   }
+
+  /**
+   * 移除某条数据
+   */
+  @Delete('/consumers/:consumerId/removeOne')
+  deleteConsumer(@Params() data) {
+    return this.consumerService.deleteConsumer(data)
+  }
 }

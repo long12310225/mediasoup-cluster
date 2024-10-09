@@ -80,7 +80,7 @@ export class ProducerService {
         where: { id: data.producerId },
       });
     if (!producer) {
-      this.logger.error('producer not found');
+      this.logger.warn('media_producer表中没有这条数据');
       return
     }
     return producer;
@@ -185,15 +185,48 @@ export class ProducerService {
     if (!transport) return
 
     // 发起 http 访问 producer 服务器（转发） 
-    await this.axiosService.fetchApi({
+    const res = await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/producers/:producerId/close',
       method: 'POST',
-      data: { producerId: data.producerId },
+      data: {
+        producerId: data.producerId
+      }
     });
-    // 返回空对象
-    return {};
+    if (res) {
+      // 移除数据库数据
+      await this.deleteProducer({
+        producerId: data.producerId
+      });
+      return res;
+    }
+    return;
+  }
 
+  /**
+   * 删除数据表条目
+   */
+  public async deleteProducer(data: { producerId: string }) {
+    try {
+      // 获取 producer
+      const producer = await this.get(data);
+      if (!producer) return;
+      const res = await MediaProducer.getRepository().delete({
+        id: data.producerId
+      });
+      console.log("%c Line:218 🌭 删除数据库 producer res", "color:#42b983", res);
+      if (res?.affected) {
+        return {
+          msg: '删除成功'
+        }
+      } else {
+        return {
+          msg: '删除失败'
+        }
+      }
+    } catch (error) {
+      this.logger.error(error)
+    }
   }
 }
