@@ -11,6 +11,12 @@ elif [ $ENV = "fat_producer" ]; then
   pm2 start sh/run/pm2_producer.json --env fat --no-daemon
 elif [ $ENV = "fat_consumer" ]; then
   pm2 start sh/run/pm2_consumer.json --env fat --no-daemon
+elif [ $ENV = "uat_main" ]; then
+  pm2 start sh/run/pm2_main.json --env uat --no-daemon
+elif [ $ENV = "uat_producer" ]; then
+  pm2 start sh/run/pm2_producer.json --env uat --no-daemon
+elif [ $ENV = "uat_consumer" ]; then
+  pm2 start sh/run/pm2_consumer.json --env uat --no-daemon
 elif [ $ENV = "prod_main" ]; then
   pm2 start sh/run/pm2_main.json --env prod --no-daemon
 elif [ $ENV = "prod_producer" ]; then

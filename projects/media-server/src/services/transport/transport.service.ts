@@ -570,4 +570,16 @@ export class TransportService {
     this.logger.error('Invalid type plain transport');
     return
   }
+
+  /**
+   * 查询transports列表
+   */
+  public async getList() {
+    try {
+      const transports = await MediaTransport.getRepository().find();
+      return transports
+    } catch (error) {
+      this.logger.error(error)
+    }
+  }
 }

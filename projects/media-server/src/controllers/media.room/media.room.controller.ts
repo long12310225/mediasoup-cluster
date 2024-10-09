@@ -6,7 +6,6 @@ import { MediaRouterService } from '../../services/media.router/media.router.ser
 export class MediaRoomController {
   constructor(
     private readonly roomService: MediaRoomService,
-    
   ) { }
 
   /**

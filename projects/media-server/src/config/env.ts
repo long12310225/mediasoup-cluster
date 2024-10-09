@@ -14,7 +14,7 @@ class Env {
   private static envPath: string = process.env.NODE_ENV;
   
   // 缓存配置表
-  private localEnvConfig = {};
+  localEnvConfig = {};
 
   constructor() {
     console.log(chalk.yellow(`${Env.TAG}: 开始载入${process.env.NODE_ENV}环境变量配置，准备验证...`));

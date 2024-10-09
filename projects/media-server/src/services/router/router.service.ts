@@ -200,7 +200,7 @@ export class RouterService {
       },
     });
     if (!router) {
-      this.logger.error('router not found');
+      this.logger.error('router表没有这条数据');
       return;
     }
     return router;
@@ -560,6 +560,48 @@ export class RouterService {
         method: 'GET',
         data: { roomId: data.roomId },
       });
+    }
+  }
+
+  /**
+   * 查询router列表
+   */
+  public async getList() {
+    try {
+      const routers = await MediaRouter.getRepository().find();
+      return routers
+    } catch (error) {
+      this.logger.error(error)
+    }
+  }
+ 
+  /**
+   * 删除表中某条数据
+   * @param data roomId: 房间uuid
+   * @returns 
+   */
+  public async deleteRouter(data: RoomDto) {
+    try {
+      const router = await this.getRouterByRoomId(data);
+      if (!router) {
+        return {
+          msg: '没有该条数据'
+        }
+      } 
+      const res = await MediaRouter.getRepository().delete({
+        roomId: data.roomId
+      });
+      if (res?.affected) {
+        return {
+          msg: '删除成功'
+        }
+      } else {
+        return {
+          msg: '删除失败'
+        }
+      }
+    } catch (error) {
+      this.logger.error(error)
     }
   }
 }

@@ -27,7 +27,6 @@ export class RoomController {
 
   /**
    * 删除某个房间
-   * @param data 
    */
   @Delete('/rooms/:roomId')
   close(@Params() data) {
@@ -36,7 +35,6 @@ export class RoomController {
 
   /**
    * 查询房间列表
-   * @param data 
    */
   @Get('/rooms')
   getList(@Params() data) {
@@ -45,11 +43,18 @@ export class RoomController {
 
   /**
    * 获取房间的RTP能力
-   * @param data 
    */
   @Get('/rooms/:roomId')
   @HttpCode(200)
   getCapabilities(@Params() data) {
     return this.roomService.getCapabilities(data)
+  }
+
+  /**
+   * 移除某条房间的数据
+   */
+  @Delete('/rooms/removeOne')
+  deleteRoom(@Params() data) {
+    return this.roomService.deleteRoom(data)
   }
 }

@@ -11,3 +11,4 @@ a=extmap:4 urn:3gpp:video-orientation
 a=setup:active
 a=mid:1
 a=sendrecv
+a=rtcp-fb:100 ccm fir

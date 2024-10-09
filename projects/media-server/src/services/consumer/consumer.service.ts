@@ -481,4 +481,81 @@ export class ConsumerService {
     return;
   }
   
+  public async getConsumerByProducerId(data: { producerId: string }) {
+    // 查询数据库获取 consumer
+    const consumer = await MediaConsumer
+      .getRepository()
+      .findOne({
+        where: { producerId: data.producerId },
+      });
+    if (!consumer) {
+      this.logger.error('media_consumer表没有这条数据');
+      return;
+    }
+    return consumer;
+  }
+
+  /**
+   * 关闭 consumer
+   * @param data 
+   */
+  public async closeConsumer(data: { producerId: string }) {
+    // 获取 consumer
+    const consumer = await this.getConsumerByProducerId(data);
+    console.log('consumer: ===============', consumer);
+    if(!consumer) return
+
+    // 创建 transport service 实例，并调用实例方法 get，通过 transportId 获取 transport
+    const transport = await this.transportService.get({
+      transportId: consumer.transportId,
+    });
+    console.log('transport: ===============', transport);
+    if (!transport) return
+
+    // 发起 http 访问 consumer 服务器（转发） 
+    const res = await this.axiosService.fetchApi({
+      host: transport.worker.apiHost,
+      port: transport.worker.apiPort,
+      path: '/consumers/:consumerId/close',
+      method: 'POST',
+      data: {
+        consumerId: consumer.id
+      },
+    });
+    if (res) {
+      // 移除数据库数据
+      await this.deleteConsumer({
+        consumerId: consumer.id
+      });
+      return res;
+    }
+    return;
+  }
+
+  /**
+   * 删除数据表条目
+   */
+  public async deleteConsumer(data: { consumerId: string }) {
+    try {
+      // 获取 consumer
+      const consumer = await this.get(data);
+      if (!consumer) return;
+      const res = await MediaConsumer.getRepository().delete({
+        id: data.consumerId
+      });
+
+      console.log("%c Line:547 🍰 删除数据库 consumer res", "color:#42b983", res);
+      if (res?.affected) {
+        return {
+          msg: '删除成功'
+        }
+      } else {
+        return {
+          msg: '删除失败'
+        }
+      }
+    } catch (error) {
+      this.logger.error(error)
+    }
+  }
 }

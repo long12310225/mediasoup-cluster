@@ -29,7 +29,7 @@ export const registryNacos = async () => {
         ip: env.getEnv('SERVER_IP') || internalIp.v4.sync(),
         port: env.getEnv('SERVER_PORT')
       },
-      'DEFAULT_GROUP'
+      env.getEnv('N_NACOS_GROUP_REGISTRY')
       )
   } catch (error) {
     logger.error(error)

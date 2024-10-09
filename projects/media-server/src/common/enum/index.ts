@@ -1,7 +1,7 @@
 export enum CONSTANTS {
   PRODUCER = 'producer',
   CONSUMER = 'consumer',
-  MASTER = 'master',
+  MAIN = 'main',
 };
 
 

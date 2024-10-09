@@ -12,6 +12,7 @@ import { SlaveModule } from './slave.module';
 import { registryNacos, getNacosConfig } from './common/nacos';
 import { WebSocketService } from './services/websocket/websocket.service';
 import { Logger } from 'nestjs-pino';
+import { CONSTANTS } from '@/common/enum';
 
 class Boot {
   // 程序端口号
@@ -34,21 +35,26 @@ class Boot {
    * 启动函数
    */
   public async init(): Promise<any> {
-    this.port == env.getEnv('SERVER_PORT_MAIN') && registryNacos();
+    registryNacos();
     const confit = await getNacosConfig()
     env.addEnvConfig(confit)
     
     startSkywalking();
     await startOtel();
 
-    const moduel =
-      this.port == env.getEnv('SERVER_PORT_MAIN') ? MainModule : SlaveModule;
+    let module
+    if (process.env.NODE_ENV !== 'dev' && env.getEnv('SERVER_TYPE')) {
+      module = CONSTANTS.MAIN === env.getEnv('SERVER_TYPE') ? MainModule : SlaveModule;
+    } else {
+      module = this.port == env.getEnv('SERVER_PORT_MAIN') ? MainModule : SlaveModule;
+    }
+    
     const httpsOptions = {
       cert: fs.readFileSync(`certs/${env.getEnv('SERVER_CERT')}`),
       key: fs.readFileSync(`certs/${env.getEnv('SERVER_KEY')}`),
     };
     const app = await NestFactory.create<NestFastifyApplication>(
-      moduel,
+      module,
       new FastifyAdapter({
         https: httpsOptions,
       }),
@@ -92,8 +98,8 @@ class Boot {
    * 初始化提示
    */
   private initRunningTips(app): string {
-    let runningTips = `App running at:
-      - Network: ${chalk.green(`https://${env.getEnv('SERVER_IP')}:${env.getEnv('SERVER_PORT')}/`)}`;
+    let runningTips = `${chalk.yellowBright(`App running at: 
+      - Network: https://${env.getEnv('SERVER_IP')}:${this.port}/`)}`;
 
     return runningTips;
   }

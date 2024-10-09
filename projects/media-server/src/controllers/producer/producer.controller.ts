@@ -39,4 +39,12 @@ export class ProducerController {
   resume(@Params() data) {
     return this.producerService.resume(data);
   }
+
+  /**
+   * 移除某条数据
+   */
+  @Delete('/producers/:producerId/removeOne')
+  deleteProducer(@Params() data) {
+    return this.producerService.deleteProducer(data)
+  }
 }

@@ -18,6 +18,10 @@
         "NODE_ENV": "fat_producer",
         "SLAVE_FOR": "producer"
       },
+      "env_uat": {
+        "NODE_ENV": "uat_producer",
+        "SLAVE_FOR": "producer"
+      },
       "env_prod": {
         "NODE_ENV": "prod_producer",
         "SLAVE_FOR": "producer"

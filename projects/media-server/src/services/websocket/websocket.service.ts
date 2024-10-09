@@ -72,7 +72,7 @@ export class WebSocketService {
    * 创建ws连接
    */
   public runWSServer(appInstance: NestFastifyApplication) { 
-    console.info(chalk.green(`App running at:
+    console.info(chalk.yellowBright(`App running at:
       - wss://${env.getEnv('SERVER_IP_MAIN')}:${env.getEnv('SERVER_PORT_MAIN')}/`));
     
     // 演示
@@ -598,6 +598,10 @@ export class WebSocketService {
 
         // Remove from its map.
         peer.data.producers.delete(producer.id) // 删除
+
+        // 通知 consumer 服务关闭consumer
+        const resu = await this.consumerService.closeConsumer({ producerId })
+        console.log('resu: ============', resu);
 
         accept()
         break;

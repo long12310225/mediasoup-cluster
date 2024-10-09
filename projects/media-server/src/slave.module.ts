@@ -15,6 +15,7 @@ import { MediaWorker } from '@/dao/worker/media.worker.do';
 import { MediaDataConsumerModule } from './modules/media.dataConsumer/media.dataConsumer.module';
 import { MediaPlainTransportModule } from './modules/media.plain.transport/media.plain.transport.module'; 
 import { OpenTelemetryModule } from 'nestjs-otel';
+import { ServerModule } from './modules/serve/serve.module';
 import { RedisModule } from 'nestjs-redis';
 import { LoggerModule } from '@/shared/modules/logger';
 import { AxiosModule } from '@/shared/modules/axios';
@@ -37,6 +38,7 @@ import { AxiosModule } from '@/shared/modules/axios';
       useFactory: () => getRedisConfig(),
     }),
     TypeOrmModule.forFeature([MediaWorker]),
+    ServerModule,
     LoggerModule,
     MediaRoomModule,
     MediaRouterModule,
