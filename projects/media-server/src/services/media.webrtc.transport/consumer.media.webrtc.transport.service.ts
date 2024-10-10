@@ -26,6 +26,8 @@ export class ConsumerMediaWebRTCTransport extends MediasoupWebRTCTransportManage
     const transport = await this.create(data);
     console.timeEnd(chalk.bgBlue(`${timestrap} createMediasoupWebRTCTransport create 耗时`))
 
+    if (!transport) return;
+
     // 缓存到 transports 中
     const constructor = this.constructor as typeof ConsumerMediaWebRTCTransport;
     constructor.transports.set(transport.id, transport);

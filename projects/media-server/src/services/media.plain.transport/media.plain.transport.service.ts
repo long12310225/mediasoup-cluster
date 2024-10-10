@@ -86,7 +86,7 @@ export class MediaPlainTransportService {
     // const transport = (this.constructor as typeof MediaPlainTransportService).transports.get(transportId);
     const transport = MediaPlainTransportService.transports.get(transportId);
     if (!transport) {
-      this.logger.error(`this ${transportId} plainTransport was not found`);
+      this.logger.warn(`缓存中没有找到 ${transportId} 此 plainTransport`);
       return;
     }
     return transport;

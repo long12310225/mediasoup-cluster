@@ -336,7 +336,7 @@ export class MediaPipeTransportService {
       data.transportId
     );
     if (!transport) {
-      this.logger.error('transport not found')
+      this.logger.warn(`缓存中没有找到 ${data.transportId} 此 pipeTransport`);
     }
     return transport;
   }

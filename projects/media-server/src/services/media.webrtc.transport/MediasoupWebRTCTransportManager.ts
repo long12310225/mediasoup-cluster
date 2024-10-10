@@ -148,7 +148,7 @@ export class MediasoupWebRTCTransportManager {
   get(transportId: string) {
     const transport = (this.constructor as typeof MediasoupWebRTCTransportManager).transports.get(transportId);
     if (!transport) {
-      this.logger.error(`this ${transportId} webRtcTransport not found`);
+      this.logger.warn(`缓存中没有找到 ${transportId} 此 webrtcTransport`);
       return
     }
     return transport;

@@ -153,7 +153,7 @@ export class MediaRouterService {
     // 从缓存中获取 router
     const router = MediaRouterService.routers.get(id);
     if (!router) {
-      this.logger.error('mediarouter not found');
+      this.logger.warn(`缓存中没有找到 ${id} 此 mediarouter`);
       return
     }
     return router;

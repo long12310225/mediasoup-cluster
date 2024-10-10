@@ -160,7 +160,7 @@ export class RoomService {
       where: { id: data.id },
     });
     if (!roomData) {
-      this.logger.error('roomData not found')
+      this.logger.warn(`media_room表中没有 ${data.id} 这条数据`);
       return
     }
     return roomData;
@@ -184,7 +184,7 @@ export class RoomService {
         },
       });
       if (!roomData) {
-        this.logger.error('room表没有这条数据');
+        this.logger.warn(`media_room表中没有 ${data.roomId} 这条数据`);
         return;
       }
       return roomData;
