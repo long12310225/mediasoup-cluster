@@ -179,7 +179,7 @@ export class MediaProducerService {
     // 从缓存中取出 producer
     const producer = MediaProducerService.producers.get(data.producerId);
     if (!producer) {
-      this.logger.warn('缓存中没有找到相关 producer');
+      this.logger.warn(`缓存中没有找到 ${data.producerId} 此 producer`);
       return;
     }
     return producer;

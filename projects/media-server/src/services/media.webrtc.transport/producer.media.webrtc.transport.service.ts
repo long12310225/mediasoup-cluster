@@ -21,6 +21,8 @@ export class ProducerMediaWebRTCTransport extends MediasoupWebRTCTransportManage
     peerId?: string
   }) {
     const transport = await this.create(data);
+
+    if (!transport) return;
     
     // 缓存到 transports 中
     const constructor = this.constructor as typeof ProducerMediaWebRTCTransport;

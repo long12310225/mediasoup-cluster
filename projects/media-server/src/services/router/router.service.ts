@@ -181,7 +181,7 @@ export class RouterService {
       },
     });
     if (!router) {
-      this.logger.error('router not found');
+      this.logger.warn(`media_router表没有 ${data.routerId} 这条数据`);
       return;
     }
     return router;
@@ -200,7 +200,7 @@ export class RouterService {
       },
     });
     if (!router) {
-      this.logger.error('router表没有这条数据');
+      this.logger.warn(`media_router表没有 roomId: ${data.roomId} 这条数据`);
       return;
     }
     return router;

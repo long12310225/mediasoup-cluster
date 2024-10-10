@@ -378,7 +378,7 @@ export class ConsumerService {
         where: { id: data.consumerId },
       });
     if (!consumer) {
-      this.logger.error('consumer not found');
+      this.logger.warn(`media_consumer表中没有 ${data.consumerId} 这条数据`);
       return;
     }
     return consumer;
@@ -489,7 +489,7 @@ export class ConsumerService {
         where: { producerId: data.producerId },
       });
     if (!consumer) {
-      this.logger.error('media_consumer表没有这条数据');
+      this.logger.warn(`media_consumer表中没有 producerId: ${data.producerId} 这条数据`);
       return;
     }
     return consumer;

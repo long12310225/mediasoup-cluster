@@ -80,7 +80,7 @@ export class ProducerService {
         where: { id: data.producerId },
       });
     if (!producer) {
-      this.logger.warn('media_producer表中没有这条数据');
+      this.logger.warn(`media_producer表中没有 ${data.producerId} 这条数据`);
       return
     }
     return producer;

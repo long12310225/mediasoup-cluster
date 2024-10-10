@@ -49,7 +49,10 @@ export class TransportService {
       },
     });
 
-    if(!result) return
+    if (!result) {
+      this.logger.warn("创建 producer transport 失败");
+      return;
+    }
 
     // 创建 entity 实例
     const mediaTransport = new MediaTransport();
@@ -178,7 +181,10 @@ export class TransportService {
     });
     console.timeEnd(`${timestrap} createConsumerTransport函数 fetchApi耗时`)
 
-    if(!result) return
+    if (!result) {
+      this.logger.warn("创建 consumer transport 失败");
+      return;
+    }
 
     // 创建 mediaTransport 实例存放数据
     const mediaTransport = new MediaTransport();
@@ -419,7 +425,10 @@ export class TransportService {
       data: { routerId: room.routerId },
     });
 
-    if(!result) return
+    if (!result) {
+      this.logger.warn("创建 consumer transport 失败");
+      return;
+    }
 
     const mediaTransport = new MediaTransport();
     mediaTransport.id = result.id;
