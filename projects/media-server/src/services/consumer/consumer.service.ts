@@ -176,13 +176,14 @@ export class ConsumerService {
     if (!transport) return
 
     // 发起 http 访问 consumer 服务器（转发） 
-    await this.axiosService.fetchApi({
+    const res = await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/consumers/:consumerId/pause',
       method: 'POST',
       data: { consumerId: data.consumerId },
     });
+    this.logger.info(res);
 
     // 返回空对象
     return {};
@@ -217,7 +218,8 @@ export class ConsumerService {
           consumerId: consumer.id
         },
       });
-      // console.log("%c Line:184 🍒 res", "color:#ea7e5c", res);
+      this.logger.info(res);
+      
       // 返回空对象
       return {};
     }

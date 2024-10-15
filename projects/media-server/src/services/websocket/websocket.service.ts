@@ -669,7 +669,7 @@ export class WebSocketService {
         }
 
         // 恢复消费者
-        const res = await this.consumerService.resume({ consumerId })
+        await this.consumerService.resume({ consumerId })
 
         accept()
 
@@ -692,7 +692,7 @@ export class WebSocketService {
         }
 
         // 暂停生产者
-        const res = await this.consumerService.pause({ consumerId })
+        await this.consumerService.pause({ consumerId })
 
         accept()
 
@@ -897,7 +897,7 @@ export class WebSocketService {
           }
 
           // 暂停生产者
-          const res = await this.consumerService.pause({ consumerId })
+          await this.consumerService.pause({ consumerId })
           
           accept()
         }
@@ -921,7 +921,7 @@ export class WebSocketService {
           }
 
           // 恢复消费者
-          const res = await this.consumerService.resume({ consumerId })
+          await this.consumerService.resume({ consumerId })
           
           accept()
         }

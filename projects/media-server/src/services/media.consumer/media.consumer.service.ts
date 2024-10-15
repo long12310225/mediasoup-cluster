@@ -133,6 +133,36 @@ export class MediaConsumerService {
       });
     });
 
+    // 信令 014、025 使用到
+    consumer.on('producerpause', () => {
+      this.axiosService.fetchApiMaster({
+        path: '/message/notify',
+        method: 'POST',
+        data: {
+          method: 'consumerPaused',
+          params: {
+            consumerId: consumer.id
+          },
+          peerId
+        },
+      });
+    })
+
+    // 信令 013、026 使用到
+    consumer.on('producerresume', () => {
+      this.axiosService.fetchApiMaster({
+        path: '/message/notify',
+        method: 'POST',
+        data: {
+          method: 'consumerResumed',
+          params: {
+            consumerId: consumer.id
+          },
+          peerId
+        },
+      });
+    })
+
     consumer.on('score', (score) => {
       this.axiosService.fetchApiMaster({
         path: '/message/notify',
@@ -147,36 +177,6 @@ export class MediaConsumerService {
         },
       });
     });
-
-    // 暂无使用，先注释
-    // consumer.on('producerpause', () => {
-    //   this.axiosService.fetchApiMaster({
-    //     path: '/message/notify',
-    //     method: 'POST',
-    //     data: {
-    //       method: 'consumerPaused',
-    //       params: {
-    //         consumerId: consumer.id
-    //       },
-    //       peerId
-    //     },
-    //   });
-    // })
-
-    // 暂无使用，先注释
-    // consumer.on('producerresume', () => {
-    //   this.axiosService.fetchApiMaster({
-    //     path: '/message/notify',
-    //     method: 'POST',
-    //     data: {
-    //       method: 'consumerResumed',
-    //       params: {
-    //         consumerId: consumer.id
-    //       },
-    //       peerId
-    //     },
-    //   });
-    // })
 
     // consumer.on('layerschange', (layers) => {
     //   // console.log("%c Line:208 🍣", "color:#ea7e5c", layers);
@@ -251,12 +251,13 @@ export class MediaConsumerService {
     try {
       // 获取 consumer 
       const consumer = this.get(data);
-      // console.log("%c Line:92 测试 consumer pause", "color:#ffdd4d", consumer);
       if (!consumer) return
       // 调用 consumer 的 pause 方法，暂停媒体流
       await consumer.pause();
-      // 返回空对象
-      return {};
+
+      return {
+        msg: "consumer.pause() successfully"
+      };
     } catch (e) {
       this.logger.error(e)
     }
@@ -278,8 +279,28 @@ export class MediaConsumerService {
       // 取消暂停服务器端消费者
       await consumer.resume();
 
-      // 返回空对象
-      return {};
+      return {
+        msg: "consumer.resume() successfully"
+      };
+    } catch (e) {
+      this.logger.error(e)
+    }
+  }
+
+  /**
+   * 关闭 consumer
+   * @param data 
+   */
+  close({ consumerId }: ConsumerDo) {
+    try {
+      // 获取 consumer 
+      const consumer = this.get({ consumerId });
+      if (!consumer) return;
+      // 关闭 consumer
+      consumer.close();
+      return {
+        msg: "consumer.close() successfully"
+      };
     } catch (e) {
       this.logger.error(e)
     }
@@ -381,24 +402,4 @@ export class MediaConsumerService {
     const mediaConsumers = MediaConsumerService.consumers.keys()
     return mediaConsumers;
   }
-
-  /**
-   * 关闭 consumer
-   * @param data 
-   */
-  close({ consumerId }: ConsumerDo) {
-    try {
-      // 获取 consumer 
-      const consumer = this.get({ consumerId });
-      if (!consumer) return;
-      // 关闭 consumer
-      consumer.close();
-      return {
-        msg: "consumer closed successfully"
-      };
-    } catch (e) {
-      this.logger.error(e)
-    }
-  }
-
 }
