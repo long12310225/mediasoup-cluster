@@ -14,7 +14,9 @@ import { MediaRoom } from '../room/media.room.do';
 import { MediaConsumer } from '../consumer/media.consumer.do';
 import { MediaProducer } from '../producer/media.producer.do';
 
-@Entity()
+@Entity({
+  comment: 'transport表'
+})
 export class MediaTransport extends BaseEntity {
   @PrimaryColumn({
     type: 'varchar',
@@ -26,7 +28,8 @@ export class MediaTransport extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    name: 'worker_id'
+    name: 'worker_id',
+    comment: 'worker id'
   })
   workerId!: string;
   @ManyToOne(() => MediaWorker, (worker) => worker.transports, {
@@ -39,7 +42,8 @@ export class MediaTransport extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    name: 'room_id'
+    name: 'room_id',
+    comment: 'room id'
   })
   roomId!: string;
   @ManyToOne(() => MediaRoom, (room) => room.transports, {
@@ -52,7 +56,8 @@ export class MediaTransport extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    name: 'router_id'
+    name: 'router_id',
+    comment: 'router id'
   })
   routerId!: string;
 
@@ -60,7 +65,8 @@ export class MediaTransport extends BaseEntity {
   @Column({
     type: 'varchar',
     name: 'user_id',
-    nullable: true
+    nullable: true,
+    comment: 'user id'
   })
   userId?: string;
 
@@ -70,17 +76,22 @@ export class MediaTransport extends BaseEntity {
   @OneToMany(() => MediaProducer, (producer) => producer.transport)
   producers!: MediaProducer[];
 
-  @Column('text')
+  @Column({
+    type: 'text',
+    comment: '服务类型'
+  })
   type!: string; // consumer | producer
 
   @Column({
     type: 'json',
-    nullable: true
+    nullable: true,
+    comment: 'metadata'
   })
   metadata?: any;
 
   @CreateDateColumn({
-    name: 'create_date'
+    name: 'create_date',
+    comment: '创建时间'
   })
   createDate!: Date;
 }

@@ -196,7 +196,7 @@ export class WebSocketService {
     
     // 监听 request 事件（接收 request 类型的消息）
     peer.on('request', (request, accept, reject) => {
-      console.info(chalk.blueBright(`ws 接收 "request" 消息 [method: ${request.method}, peerId: ${peer.id}]`));
+      // console.info(chalk.blueBright(`ws 接收 "request" 消息 [method: ${request.method}, peerId: ${peer.id}]`));
 
       this._handleProtooRequest(peer, request, accept, reject).catch(
         (error) => {
@@ -246,7 +246,7 @@ export class WebSocketService {
    *
    * @async
    */
-  public async _handleProtooRequest(peer, request, accept, reject) {
+  public async _handleProtooRequest(peer, request, accept, reject) {    
     switch (request.method) {
       // 001
       // 获取路由的rtp能力
@@ -282,6 +282,7 @@ export class WebSocketService {
 
         let mediasoupTransport: WebRtcTransportData
         try {
+          // producer、consumer服务会分别创建 transport
           if (producing && !consuming) {
             mediasoupTransport = await this.transportService.createProducerTransport(data);
           } else if (!producing && consuming) {
@@ -577,7 +578,7 @@ export class WebSocketService {
 
         break;
       }
-      // 010
+      // 010 关闭 摄像头 / 唛
       case 'closeProducer': {
         // Ensure the Peer is joined.
         if (!peer.data.joined) {
@@ -595,13 +596,11 @@ export class WebSocketService {
 
         // 关闭生产者
         const res = await this.producerService.closeProducer({ producerId })
-
         // Remove from its map.
-        peer.data.producers.delete(producer.id) // 删除
+        peer.data.producers.delete(producer.id);
 
         // 通知 consumer 服务关闭consumer
-        const resu = await this.consumerService.closeConsumer({ producerId })
-        console.log('resu: ============', resu);
+        await this.consumerService.closeConsumer({ producerId })
 
         accept()
         break;
@@ -802,6 +801,22 @@ export class WebSocketService {
         accept()
 
         break
+      }
+      case 'getTransportStats': { 
+        const { transportId } = request.data
+        const transport = peer.data.transports.get(transportId)
+
+        if (!transport) {
+          this.logger.error(`transport with id "${transportId}" not found`)
+          return;
+        }
+
+        const stats = await this.transportService.getStats({ transportId })
+        // console.log("%c Line:817 🥝 getTransportStats stats", "color:#f5ce50", stats);
+
+        accept(stats)
+
+        break;
       }
       // 020
       case 'getProducerStats': {
@@ -1134,15 +1149,26 @@ export class WebSocketService {
   /********************* 新内容 *********************/
   /**
    * 事件监听回推 notify 消息
+   * 注：无需遍历，无需区分method
    */
   public async notifyMain(data) {
     try {
       const { method, params, peerId } = data;
       const peer = WebSocketService._protooRoom?.getPeer(peerId);
       if (!peer) return;
-
+      
+      // 发送通知
       await peer?.notify(method, params);
 
+      // 删除缓存
+      switch (method) { 
+        case 'consumerClosed':
+          peer?.data.consumers.delete(params.consumerId)
+          break;
+        case 'dataConsumerClosed':
+          peer?.data.dataConsumers.delete(params.dataConsumerId)
+          break;
+      }
     } catch (error) {
       this.logger.error(error)
     }
@@ -1158,7 +1184,6 @@ export class WebSocketService {
 
     switch (method) {
       case 'transportclose':
-      case 'producerclose':
         peer?.data.consumers.delete(params.consumerId)
         break;
     }
@@ -1175,7 +1200,7 @@ export class WebSocketService {
     switch (type) {
       case 'transportclose':
       case 'dataproducerclose':
-        peer?.data.consumers.delete(params.dataConsumerId)
+        peer?.data.dataConsumers.delete(params.dataConsumerId)
         break;
     }
   }

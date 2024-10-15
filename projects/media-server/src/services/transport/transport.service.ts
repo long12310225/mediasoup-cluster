@@ -373,10 +373,43 @@ export class TransportService {
         where: { id: data.transportId },
       });
     if (!transport) {
-      this.logger.error('transport not found');
+      this.logger.warn(`media_transport表中没有 transportId: ${data.transportId} 这条数据`);
       return
     }
     return transport;
+  }
+
+  /**
+   * 根据 transportId 获取 transport 状态
+   * @param data 
+   * @returns 
+   */
+  public async getStats(data: { transportId: string }) {
+    // 获取 transport
+    const transport = await this.get(data);
+    if(!transport) return
+    // console.log("%c Line:391 🍩 getStats transport", "color:#93c0a4", transport);
+
+    // 如果类型是 'consumer'
+    let res
+    if (transport.type === CONSTANTS.CONSUMER) { 
+      res = await this.axiosService.fetchApi({
+        host: transport.worker.apiHost,
+        port: transport.worker.apiPort,
+        path: '/consumer_transports/:transportId/getStats',
+        method: 'POST',
+        data: { transportId: data.transportId },
+      });
+    } else if (transport.type === CONSTANTS.PRODUCER) {
+      res = await this.axiosService.fetchApi({
+        host: transport.worker.apiHost,
+        port: transport.worker.apiPort,
+        path: '/producer_transports/:transportId/getStats',
+        method: 'POST',
+        data: { transportId: data.transportId },
+      });
+    }
+    return res;
   }
 
   /**

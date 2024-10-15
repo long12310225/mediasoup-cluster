@@ -97,10 +97,9 @@ export class MediaConsumerService {
   /**
    * 一堆 consumer 监听事件
    * @param consumer 
-   * @param peerId 
+   * @param peerId 这个 peerId 是创建时的 peerId
    */
   handleConsumer(consumer, peerId) {
-    // consumerPeer.data.consumers.delete(consumer.id)
     consumer.on('transportclose', () => {
       // 发起 http 请求，向主应用传递事件
       this.axiosService.fetchApiMaster({
@@ -120,22 +119,7 @@ export class MediaConsumerService {
     consumer.observer.on("close", () => {
       this.logger.info('触发 consumer.observer close 事件');
 
-      this.axiosService.fetchApiMaster({
-        path: '/peer/consumer/handle',
-        method: 'POST',
-        data: {
-          method: 'producerclose',
-          params: {
-            consumerId: consumer.id,
-          },
-          peerId
-        }
-      });
-
       // 调用 peer.notify() 发送一条 notification 消息给客户端
-      // consumerPeer.notify('consumerClosed', {
-      //   consumerId: consumer.id
-      // }).catch(() => { })
       this.axiosService.fetchApiMaster({
         path: '/message/notify',
         method: 'POST',
@@ -149,48 +133,7 @@ export class MediaConsumerService {
       });
     });
 
-    consumer.on('producerpause', () => {
-      // console.log("%c Line:151 🌽", "color:#4fff4B");
-      // consumerPeer.notify('consumerPaused', {
-      //   consumerId: consumer.id
-      // }).catch(() => { })
-      this.axiosService.fetchApiMaster({
-        path: '/message/notify',
-        method: 'POST',
-        data: {
-          method: 'consumerPaused',
-          params: {
-            consumerId: consumer.id
-          },
-          peerId
-        },
-      });
-    })
-
-    consumer.on('producerresume', () => {
-      // console.log("%c Line:170 🌮", "color:#42b983");
-      // consumerPeer.notify('consumerResumed', {
-      //   consumerId: consumer.id
-      // }).catch(() => { })
-      this.axiosService.fetchApiMaster({
-        path: '/message/notify',
-        method: 'POST',
-        data: {
-          method: 'consumerResumed',
-          params: {
-            consumerId: consumer.id
-          },
-          peerId
-        },
-      });
-    })
-
     consumer.on('score', (score) => {
-      // console.log("%c Line:184 🥝 score", "color:#fca650", score);
-      // consumerPeer.notify('consumerScore', {
-      //   consumerId: consumer.id, score
-      // }).catch(() => { })
-      
       this.axiosService.fetchApiMaster({
         path: '/message/notify',
         method: 'POST',
@@ -203,7 +146,37 @@ export class MediaConsumerService {
           peerId
         },
       });
-    })
+    });
+
+    // 暂无使用，先注释
+    // consumer.on('producerpause', () => {
+    //   this.axiosService.fetchApiMaster({
+    //     path: '/message/notify',
+    //     method: 'POST',
+    //     data: {
+    //       method: 'consumerPaused',
+    //       params: {
+    //         consumerId: consumer.id
+    //       },
+    //       peerId
+    //     },
+    //   });
+    // })
+
+    // 暂无使用，先注释
+    // consumer.on('producerresume', () => {
+    //   this.axiosService.fetchApiMaster({
+    //     path: '/message/notify',
+    //     method: 'POST',
+    //     data: {
+    //       method: 'consumerResumed',
+    //       params: {
+    //         consumerId: consumer.id
+    //       },
+    //       peerId
+    //     },
+    //   });
+    // })
 
     // consumer.on('layerschange', (layers) => {
     //   // console.log("%c Line:208 🍣", "color:#ea7e5c", layers);
@@ -213,19 +186,19 @@ export class MediaConsumerService {
     //   //   temporalLayer: layers ? layers.temporalLayer : null,
     //   // }).catch(() => { })
 
-    //   // this.axiosService.fetchApiMaster({
-    //   //   path: '/message/notify',
-    //   //   method: 'POST',
-    //   //   data: {
-    //   //     method: 'consumerLayersChanged',
-    //   //     params: {
-    //   //       consumerId: consumer.id,
-    //   //       spatialLayer: layers ? layers.spatialLayer : null,
-    //   //       temporalLayer: layers ? layers.temporalLayer : null,
-    //   //     },
-    //   //     peerId
-    //   //   },
-    //   // });
+    //   this.axiosService.fetchApiMaster({
+    //     path: '/message/notify',
+    //     method: 'POST',
+    //     data: {
+    //       method: 'consumerLayersChanged',
+    //       params: {
+    //         consumerId: consumer.id,
+    //         spatialLayer: layers ? layers.spatialLayer : null,
+    //         temporalLayer: layers ? layers.temporalLayer : null,
+    //       },
+    //       peerId
+    //     },
+    //   });
     // })
 
     // consumer.on('trace', (trace) => {
@@ -234,6 +207,7 @@ export class MediaConsumerService {
   }
 
   handleBroadcastConsumer(consumer, broadcasterId) {
+
     consumer.on('transportclose', () => {
       // 发起 http 请求，向主应用传递事件
       this.axiosService.fetchApiMaster({
@@ -250,6 +224,8 @@ export class MediaConsumerService {
     })
 
     consumer.on('producerclose', () => {
+      console.log("%c Line:228 🍧", "color:#7f2b82", 'broadcast触发 consumer.on("producerclose")');
+
       // 发起 http 请求，向主应用传递事件
       this.axiosService.fetchApiMaster({
         path: '/broadcast/consumer/handle',

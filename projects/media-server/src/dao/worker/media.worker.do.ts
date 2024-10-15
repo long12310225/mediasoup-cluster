@@ -13,10 +13,11 @@ import {
 import { MediaRoom } from '../room/media.room.do';
 import { MediaTransport } from '../transport/media.transport.do';
 import { MediaRouter } from '../router/media.router.do';
-// import { Serve } from '@/dao/serve/serve.do';
 import { v4 as uuidv4 } from 'uuid';
 
-@Entity()
+@Entity({
+  comment: 'worker表'
+})
 @Index(['apiHost', 'apiPort', 'pid'], { unique: true })
 export class MediaWorker extends BaseEntity {
   @PrimaryColumn({
@@ -34,40 +35,51 @@ export class MediaWorker extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    name: 'api_host'
+    name: 'api_host',
+    comment: '服务host'
   })
   apiHost!: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'int',
+    name: 'api_port',
+    comment: '服务port'
+  })
+  apiPort!: number;
+
+  @Column({
+    type: 'varchar',
+    comment: '服务类型'
+  })
   type!: string; // consumer | producer
 
   @Column({
     type: 'int',
-    name: 'api_port'
+    comment: 'pid'
   })
-  apiPort!: number;
-
-  @Column('int')
   pid!: number;
 
   @Column({
     type: 'int',
     name: 'max_transport',
-    default: 1e9
+    default: 1e9,
+    comment: 'transport上限'
   })
   maxTransport!: number;
 
   @Column({
     type: 'int',
     name: 'transport_count',
-    default: 0
+    default: 0,
+    comment: 'transport当前数量'
   })
   transportCount!: number;
 
   @Column({
     type: 'int',
     name: 'error_count',
-    default: 0
+    default: 0,
+    comment: '异常数量'
   })
   errorCount!: number;
 
@@ -75,6 +87,7 @@ export class MediaWorker extends BaseEntity {
     name: 'is_alive_serve',
     type: 'int',
     default: 0,
+    comment: '服务是否存活'
   })
   isAliveServe?: number;
 
@@ -100,7 +113,8 @@ export class MediaWorker extends BaseEntity {
   // serve!: Serve;
 
   @CreateDateColumn({
-    name: 'create_date'
+    name: 'create_date',
+    comment: '创建时间'
   })
   createDate!: Date;
 }

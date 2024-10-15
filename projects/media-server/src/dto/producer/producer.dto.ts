@@ -17,7 +17,7 @@ export class CreateProducerDo {
   appData?: any;
 
   @IsString()
-  peerId?: string
+  peerId?: string = ''
 }
 
 export class ProducerDo {

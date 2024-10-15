@@ -194,4 +194,23 @@ export class MediasoupWebRTCTransportManager {
       this.logger.error(e)
     }
   }
+
+  /**
+   * 获取 transport 状态
+   * @param data transportId
+   */
+  async getStats(data: { transportId: string }) {
+    try {
+      // 从缓存 transports 中取出 transport
+      const transport = this.get(data.transportId);
+      // console.log("%c Line:202 🍏 getStats 缓存中取出 transport", "color:#93c0a4", transport);
+      if (!transport) return;
+      
+      const res = await transport.getStats();
+      // console.log("%c Line:206 🍧 getStats transport stats res", "color:#b03734", res);
+      return res
+    } catch (e) {
+      this.logger.error(e)
+    }
+  }
 }

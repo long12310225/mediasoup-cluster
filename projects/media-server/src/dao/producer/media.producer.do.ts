@@ -9,7 +9,9 @@ import {
 } from 'typeorm';
 import { MediaTransport } from '../transport/media.transport.do';
 
-@Entity()
+@Entity({
+  comment: 'producer表'
+})
 export class MediaProducer extends BaseEntity {
   @PrimaryColumn({
     type: 'varchar',
@@ -19,12 +21,23 @@ export class MediaProducer extends BaseEntity {
   })
   id: string;
 
-  @Column('varchar')
+  @Column({
+    type: 'varchar',
+    comment: 'kind'
+  })
   kind: string;
 
   @Column({
     type: 'varchar',
-    name: 'transport_id'
+    name: 'peer_id',
+    comment: '创建 producer 关联的 peer id'
+  })
+  peerId?: string;
+
+  @Column({
+    type: 'varchar',
+    name: 'transport_id',
+    comment: 'transport id'
   })
   transportId: string;
   @ManyToOne(() => MediaTransport, (transport) => transport.producers, {
@@ -36,7 +49,8 @@ export class MediaProducer extends BaseEntity {
   transport: MediaTransport;
 
   @CreateDateColumn({
-    name: 'create_date'
+    name: 'create_date',
+    comment: '创建时间'
   })
   createDate!: Date;
 }

@@ -98,19 +98,6 @@ export class MediaDataConsumerService {
     });
 
     dataConsumer.on('dataproducerclose', () => {
-      // Remove from its map.
-      // dataConsumerPeer.data.dataConsumers.delete(dataConsumer.id)
-      this.axiosService.fetchApiMaster({
-        path: '/peer/dataConsumer/handle',
-        method: 'POST',
-        data: {
-          type: 'dataproducerclose',
-          params: {
-            dataConsumerId: dataConsumer.id,
-          },
-          peerId,
-        },
-      });
 
       // dataConsumerPeer.notify('dataConsumerClosed', { dataConsumerId: dataConsumer.id }).catch(() => {})
       this.axiosService.fetchApiMaster({
