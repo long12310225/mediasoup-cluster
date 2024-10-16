@@ -42,7 +42,9 @@ export class WebSocketService {
    * protoo Room instance.
    * @type {ProtooRoom}
    */
-  static _protooRoom: ProtooRoom;
+  // static _protooRoom: ProtooRoom; 
+  // 缓存房间有问题 
+  // 当不同人，进入不同房间时，会刷掉这个房间的信息，然后后面执行得慢的命令，会获取到错的那个房间来使用了
 
   static _mediaRouter;
 
@@ -111,17 +113,17 @@ export class WebSocketService {
             router = await this.routerService.getOrCreate({
               roomId: room.id
             })
-            // 缓存 room 和 router
-            WebSocketService._protooRoom = this.roomService.getProtooRoom(roomId);
+            
             WebSocketService._mediaRouter = router;
           }
           if (!router) {
             this.logger.error('没有相关router');
-            this.logger.error('请检查从服务是否正常运行！！');
+            this.logger.error('请检查media_worker表是否存在垃圾数据!!');
             return
           }
 
           this.createProtooPeer({
+            roomId,
             peerId,
             protooWebSocketTransportFun,
             serverType: room.serverType,
@@ -143,9 +145,9 @@ export class WebSocketService {
    * @param {Boolean} consume - Whether this peer wants to consume from others.
    * @param {protoo.WebSocketTransport} protooWebSocketTransportFun - The associated protoo WebSocket transport fun.
    */
-  public async createProtooPeer({ peerId, protooWebSocketTransportFun, serverType, routerId }) {
+  public async createProtooPeer({ roomId, peerId, protooWebSocketTransportFun, serverType, routerId }) {
     // 验证用户是否已经进入过
-    const existingPeer = WebSocketService._protooRoom.getPeer(peerId);
+    const existingPeer = this.roomService.getProtooRoom(roomId).getPeer(peerId);
     if (existingPeer) {
       console.warn('createProtooPeer() | 已存在相同peerId用户, closing it [peerId:%s]', peerId);
       existingPeer.close();
@@ -156,7 +158,7 @@ export class WebSocketService {
       // 获取传输对象的
       // 返回 WebSocketTransport 对象（内置：WebSocketConnection实例），用于传递给 Peer 内使用
       const protooWebSocketTransport = protooWebSocketTransportFun();
-      peer = WebSocketService._protooRoom.createPeer(peerId, protooWebSocketTransport, serverType);
+      peer = this.roomService.getProtooRoom(roomId).createPeer(peerId, protooWebSocketTransport, serverType);
     } catch (error) {
       this.logger.error(error)
     }
@@ -220,7 +222,7 @@ export class WebSocketService {
       // this.routerService.deleteRouter({ peerId })
 
       // 当最后一个人离开房间时才关闭房间
-      if (WebSocketService._protooRoom.peers.length === 0) {
+      if (this.roomService.getProtooRoom(roomId).peers.length === 0) {
         console.info('last Peer in the room left, closing the room [roomId:%s]', this._roomId)
         this.close();
       }
@@ -1091,7 +1093,7 @@ export class WebSocketService {
    * @returns JoinedPeers
    */
   _getJoinedPeers({ excludePeer = { id: ''} } = {}) {
-    return WebSocketService._protooRoom.peers.filter((peer) => {
+    return this.roomService.getProtooRoom(this._roomId).peers.filter((peer) => {
       return peer.data.joined && peer.id !== excludePeer.id
     })
   }
@@ -1117,7 +1119,7 @@ export class WebSocketService {
   public close() {
 
     // Close the protoo Room.
-    WebSocketService._protooRoom.close();
+    this.roomService.getProtooRoom(this._roomId).close();
 
     // Close the mediasoup Router.
     this.roomService.close({
@@ -1141,7 +1143,7 @@ export class WebSocketService {
   public async notifyMain(data) {
     try {
       const { method, params, peerId } = data;
-      const peer = WebSocketService._protooRoom?.getPeer(peerId);
+      const peer = this.roomService.getProtooRoom(this._roomId)?.getPeer(peerId);
       if (!peer) return;
       
       // 发送通知
@@ -1166,7 +1168,7 @@ export class WebSocketService {
    */
   public async peerConsumerHandle(data) {
     const { method, params, peerId } = data;
-    const peer = WebSocketService._protooRoom?.getPeer(peerId);
+    const peer = this.roomService.getProtooRoom(this._roomId)?.getPeer(peerId);
     if (!peer) return;
 
     switch (method) {
@@ -1181,7 +1183,7 @@ export class WebSocketService {
    */
   public async peerDataConsumerHandle(data) {
     const { type, params, peerId } = data;
-    const peer = WebSocketService._protooRoom?.getPeer(peerId);
+    const peer = this.roomService.getProtooRoom(this._roomId)?.getPeer(peerId);
     if (!peer) return;
     
     switch (type) {
