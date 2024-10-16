@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-SERVER_URL=https://10.2.30.20:4443
+SERVER_URL=https://10.2.30.27:4443
 ROOM_ID=0000
-PRODUCER_ID=0aee7db2-5832-4eb7-8023-98b84ff21241 
+PRODUCER_ID=040fcd0e-89e0-40b8-848c-82570a364a95  
 MEDIA_FILE=./output.webm
 
 function show_usage()
@@ -65,7 +65,7 @@ BROADCASTER_ID=$(LC_CTYPE=C tr -dc A-Za-z0-9 < /dev/urandom | fold -w ${1:-32} |
 HTTPIE_COMMAND="http --check-status --verify=no"
 #AUDIO_SSRC=4253847681
 #AUDIO_PT=111
-VIDEO_SSRC=2681796080
+VIDEO_SSRC=3541801792
 VIDEO_PT=96
 
 #
@@ -113,7 +113,6 @@ res=$(${HTTPIE_COMMAND} \
 	rtcpMux:=false \
 	2> /dev/null)
 
-
 #
 # Parse JSON response into Shell variables and extract the PlainTransport id,
 # IP, port and RTCP port.
@@ -127,16 +126,14 @@ echo ">>> PlainTransport Connect ..."
 
 ${HTTPIE_COMMAND} -v \
 	POST ${SERVER_URL}/rooms/${ROOM_ID}/broadcasters/${BROADCASTER_ID}/transports/${transportId}/plainconnect \
-	ip="10.2.30.20" \
+	ip="127.0.0.1" \
 	port:=33334 \
 	rtcpport:=33335 \
 	> /dev/null
 
 #echo ${res}
 
-echo "开始睡眠5秒..."
-sleep 5
-echo "睡眠结束！"
+
 echo ">>> creating mediasoup video consumer..."
 
 res1=$(${HTTPIE_COMMAND} \

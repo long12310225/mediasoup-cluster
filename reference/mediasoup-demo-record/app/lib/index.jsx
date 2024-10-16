@@ -195,8 +195,7 @@ async function run()
 
 	render(
 		<Provider store={store}>
-      <RoomContext.Provider value={roomClient}>
-        <span>peerId: { peerId }</span>
+			<RoomContext.Provider value={roomClient}>
 				<Room />
 			</RoomContext.Provider>
 		</Provider>,

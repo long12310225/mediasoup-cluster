@@ -53,7 +53,7 @@
   "dependencies": {
     "dotenv": "^16.1.4",
     "fastify": "^4.17.0",
-    "mediasoup": "3.14.8",
+    "mediasoup": "github:versatica/mediasoup#v3",
     "node-fetch": "^3.3.1",
     "pg": "^8.11.0",
     "reflect-metadata": "^0.1.13",

@@ -87,7 +87,6 @@ export default class RoomClient
 		logger.debug(
 			'constructor() [roomId:"%s", peerId:"%s", displayName:"%s", device:%s]',
 			roomId, peerId, displayName, device.flag);
-    this._roomId = roomId;
 
 		// Closed flag.
 		// @type {Boolean}
@@ -1636,20 +1635,6 @@ export default class RoomClient
 					text : `Error setting Consumer preferred layers: ${error}`
 				}));
 		}
-  }
-  
-  async getResource()
-  {
-		try
-    {
-      await this._protoo.request('getResource', {
-        roomId: this._roomId
-      });
-		}
-		catch (error)
-		{
-      console.log("%c Line:1647 🍪 error", "color:#fca650", error);
-    }
 	}
 
 	async setConsumerPriority(consumerId, priority)
@@ -2404,8 +2389,8 @@ export default class RoomClient
 				{
 					if (connectionState === 'connected')
 					{
-						// this.enableChatDataProducer();
-						// this.enableBotDataProducer();
+						this.enableChatDataProducer();
+						this.enableBotDataProducer();
 					}
 				});
 			}

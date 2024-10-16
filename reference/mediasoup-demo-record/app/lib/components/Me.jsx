@@ -28,8 +28,7 @@ class Me extends React.Component
 			audioProducer,
 			videoProducer,
 			faceDetection,
-			onSetStatsPeerId,
-			onGetResourceClick
+			onSetStatsPeerId
 		} = this.props;
 
 		let micState;
@@ -157,10 +156,6 @@ class Me extends React.Component
 						roomClient.setMaxSendingSpatialLayer(spatialLayer);
 					}}
 					onStatsClick={onSetStatsPeerId}
-					onGetResourceClick={() =>
-					{
-						roomClient.getResource();
-					}}
 				/>
 
 				<ReactTooltip

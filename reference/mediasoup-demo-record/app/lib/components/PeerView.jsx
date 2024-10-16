@@ -83,8 +83,7 @@ export default class PeerView extends React.Component
 			onChangeVideoPreferredLayers,
 			onChangeVideoPriority,
 			onRequestKeyFrame,
-      onGetResourceClick,
-      onStatsClick,
+			onStatsClick
 		} = this.props;
 
 		const {
@@ -105,13 +104,10 @@ export default class PeerView extends React.Component
 							className={classnames('icon', 'info', { on: showInfo })}
 							onClick={() => this.setState({ showInfo: !showInfo })}
 						/>
+
 						<div
 							className={classnames('icon', 'stats')}
 							onClick={() => onStatsClick(peer.id)}
-            />
-            <div
-							className={classnames('icon', 'stats')}
-							onClick={() => onGetResourceClick(peer.id)}
 						/>
 					</div>
 
@@ -794,6 +790,5 @@ PeerView.propTypes =
 	onChangeVideoPreferredLayers   : PropTypes.func,
 	onChangeVideoPriority          : PropTypes.func,
 	onRequestKeyFrame              : PropTypes.func,
-	onGetResourceClick             : PropTypes.func,
 	onStatsClick                   : PropTypes.func.isRequired
 };

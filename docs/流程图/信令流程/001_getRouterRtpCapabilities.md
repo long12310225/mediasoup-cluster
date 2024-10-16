@@ -3,11 +3,12 @@ sequenceDiagram
     participant Client as 客户端
     participant Master as 主信令服务
     participant Producer as 从生产服务
+    
     Producer->>Producer: 初始化（创建worker等）
     Client->>Master: 发送getRouterRtpCapabilities请求
     Master->>Producer: 转发getRouterRtpCapabilities请求
-    Producer->>Producer: 取一个worker创建Router
-    Producer->>Producer: 保存Router到内存
+    Producer->>Producer: 取一个worker创建Room
+    Producer->>Producer: 保存Room到数据库
     Producer->>Master: 返回路由rtp能力
     Master->>Client: 返回getRouterRtpCapabilities响应
 ```

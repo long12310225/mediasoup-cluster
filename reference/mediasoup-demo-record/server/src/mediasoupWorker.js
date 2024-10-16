@@ -44,7 +44,7 @@ module.exports = {
         logger.info('mediasoup Worker resource usage [pid:%d]: %o', worker.pid, usage)
       }, 120000)
 
+      return mediasoupWorkers
     }
-    return mediasoupWorkers
   },
 }
