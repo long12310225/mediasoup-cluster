@@ -192,7 +192,6 @@ export class MediaRouterService {
 
   async getList() {
     const mediaRouters = MediaRouterService.routers.keys()
-    console.log("%c Line:195 🥟 mediaRouters", "color:#42b983", mediaRouters);
     return mediaRouters
   }
 }

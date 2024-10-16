@@ -4,7 +4,7 @@
   "description": "",
   "author": "michael",
   "scripts": {
-    "dev": "NODE_ENV=dev cross-env PORT=4443 SLAVE_FOR=master nest start --watch",
+    "dev:main": "NODE_ENV=dev cross-env PORT=4443 SLAVE_FOR=master nest start --watch",
     "dev:producer": "NODE_ENV=dev cross-env PORT=3021 SLAVE_FOR=producer nest start --watch",
     "dev:consumer": "NODE_ENV=dev cross-env PORT=3031 SLAVE_FOR=consumer nest start --watch",
     "fat:main": "sh sh/run/run.sh fat_main",

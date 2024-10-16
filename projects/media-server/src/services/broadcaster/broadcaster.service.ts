@@ -415,7 +415,7 @@ export class BroadcasterService {
     switch (method) {
       case 'transportclose':
       case 'producerclose':
-        broadcaster?.data.dataConsumers.delete(params.consumerId)
+        broadcaster?.data.consumers.delete(params.consumerId)
         break;
     }
   }

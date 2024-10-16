@@ -147,6 +147,7 @@ export class ConsumerService {
       consumer.producerId = data.producerId;
       consumer.transportId = transport.id;
       consumer.type = CONSTANTS.CONSUMER;
+      // consumer.peerId = data.peerId;
 
       // 保存 MediaConsumer 实例到数据库
       await MediaConsumer.getRepository().save(consumer);
@@ -175,13 +176,14 @@ export class ConsumerService {
     if (!transport) return
 
     // 发起 http 访问 consumer 服务器（转发） 
-    await this.axiosService.fetchApi({
+    const res = await this.axiosService.fetchApi({
       host: transport.worker.apiHost,
       port: transport.worker.apiPort,
       path: '/consumers/:consumerId/pause',
       method: 'POST',
       data: { consumerId: data.consumerId },
     });
+    this.logger.info(res);
 
     // 返回空对象
     return {};
@@ -216,7 +218,8 @@ export class ConsumerService {
           consumerId: consumer.id
         },
       });
-      // console.log("%c Line:184 🍒 res", "color:#ea7e5c", res);
+      this.logger.info(res);
+      
       // 返回空对象
       return {};
     }
@@ -481,18 +484,22 @@ export class ConsumerService {
     return;
   }
   
-  public async getConsumerByProducerId(data: { producerId: string }) {
+  /**
+   * 根据 producerId 获取消费者 consumers 列表
+   * @param data 
+   */
+  public async getConsumersByProducerId(data: { producerId: string }) {
     // 查询数据库获取 consumer
-    const consumer = await MediaConsumer
+    const consumers = await MediaConsumer
       .getRepository()
-      .findOne({
+      .find({
         where: { producerId: data.producerId },
       });
-    if (!consumer) {
-      this.logger.warn(`media_consumer表中没有 producerId: ${data.producerId} 这条数据`);
+    if (!consumers.length) {
+      this.logger.warn(`media_consumer表中没有相关列表数据`);
       return;
     }
-    return consumer;
+    return consumers;
   }
 
   /**
@@ -500,36 +507,34 @@ export class ConsumerService {
    * @param data 
    */
   public async closeConsumer(data: { producerId: string }) {
-    // 获取 consumer
-    const consumer = await this.getConsumerByProducerId(data);
-    console.log('consumer: ===============', consumer);
-    if(!consumer) return
+    // 获取 consumers 列表
+    const consumers = await this.getConsumersByProducerId(data);
+    if (!consumers) return;
 
-    // 创建 transport service 实例，并调用实例方法 get，通过 transportId 获取 transport
-    const transport = await this.transportService.get({
-      transportId: consumer.transportId,
-    });
-    console.log('transport: ===============', transport);
-    if (!transport) return
-
-    // 发起 http 访问 consumer 服务器（转发） 
-    const res = await this.axiosService.fetchApi({
-      host: transport.worker.apiHost,
-      port: transport.worker.apiPort,
-      path: '/consumers/:consumerId/close',
-      method: 'POST',
-      data: {
-        consumerId: consumer.id
-      },
-    });
-    if (res) {
-      // 移除数据库数据
-      await this.deleteConsumer({
-        consumerId: consumer.id
+    // 遍历关闭 consumer
+    consumers.forEach(async (consumer) => {
+      const transport = await this.transportService.get({
+        transportId: consumer.transportId,
       });
-      return res;
-    }
-    return;
+      if (!transport) return;
+      
+      const res = await this.axiosService.fetchApi({
+        host: transport.worker.apiHost,
+        port: transport.worker.apiPort,
+        path: '/consumers/:consumerId/close',
+        method: 'POST',
+        data: {
+          consumerId: consumer.id
+        },
+      });
+      // 请求成功，删除数据库数据
+      if (res) {
+        this.deleteConsumer({
+          consumerId: consumer.id
+        });
+      }
+    })
+    
   }
 
   /**
@@ -543,8 +548,6 @@ export class ConsumerService {
       const res = await MediaConsumer.getRepository().delete({
         id: data.consumerId
       });
-
-      console.log("%c Line:547 🍰 删除数据库 consumer res", "color:#42b983", res);
       if (res?.affected) {
         return {
           msg: '删除成功'

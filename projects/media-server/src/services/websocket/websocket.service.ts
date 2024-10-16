@@ -44,7 +44,7 @@ export class WebSocketService {
    */
   static _protooRoom: ProtooRoom;
 
-  private _mediaRouter;
+  static _mediaRouter;
 
   constructor(
     @InjectPinoLogger(WebSocketService.name)
@@ -60,19 +60,10 @@ export class WebSocketService {
   ) { }
 
   /**
-   * 初始化数据
-   * @param roomId 房间 id
-   */
-  public initData(roomId: string): void {
-    WebSocketService._protooRoom = this.roomService.getProtooRoom(roomId)
-    this._roomId = roomId
-  }
-
-  /**
    * 创建ws连接
    */
   public runWSServer(appInstance: NestFastifyApplication) { 
-    console.info(chalk.yellowBright(`App running at:
+    console.info(chalk.bgBlueBright(`App running at:
       - wss://${env.getEnv('SERVER_IP_MAIN')}:${env.getEnv('SERVER_PORT_MAIN')}/`));
     
     // 演示
@@ -103,7 +94,7 @@ export class WebSocketService {
 
         // The client indicates the roomId and peerId in the URL query.
         const u = url.parse(info.request.url, true); // 解析ws的url
-        const roomId: string = u.query['roomId'] || uuidv4();
+        const roomId: string = this._roomId = u.query['roomId'] || uuidv4();
         const peerId = <string>u.query['peerId'];
         if (!roomId || !peerId) {
           reject(400, 'Connection request without roomId and/or peerId');
@@ -113,26 +104,22 @@ export class WebSocketService {
         // 创建队列，将以下逻辑，统一放在一起执行；同时有其他人进入时，而不阻塞后者
         this.queuePeer.push(async () => {
           // 当 ws 连接时，自动创建房间，或者获取房间
-          console.time(chalk.yellowBright(`用户:${peerId} this.roomService.createOrGetProducerRoom 房间耗时`))
           const room = await this.roomService.createOrGetProducerRoom({ roomId });
-          console.timeEnd(chalk.yellowBright(`用户:${peerId} this.roomService.createOrGetProducerRoom 房间耗时`))
           let router
           if (room?.id) {
             // 创建 router
-            console.time(chalk.yellowBright(`用户:${peerId} this.routerService.getOrCreate 路由耗时`))
             router = await this.routerService.getOrCreate({
               roomId: room.id
             })
-            this._mediaRouter = router
-            console.timeEnd(chalk.yellowBright(`用户:${peerId} this.routerService.getOrCreate 路由耗时`))
+            // 缓存 room 和 router
+            WebSocketService._protooRoom = this.roomService.getProtooRoom(roomId);
+            WebSocketService._mediaRouter = router;
           }
-
           if (!router) {
             this.logger.error('没有相关router');
+            this.logger.error('请检查从服务是否正常运行！！');
             return
           }
-
-          this.initData(roomId)
 
           this.createProtooPeer({
             peerId,
@@ -196,7 +183,7 @@ export class WebSocketService {
     
     // 监听 request 事件（接收 request 类型的消息）
     peer.on('request', (request, accept, reject) => {
-      console.info(chalk.blueBright(`ws 接收 "request" 消息 [method: ${request.method}, peerId: ${peer.id}]`));
+      // console.info(chalk.blueBright(`ws 接收 "request" 消息 [method: ${request.method}, peerId: ${peer.id}]`));
 
       this._handleProtooRequest(peer, request, accept, reject).catch(
         (error) => {
@@ -246,7 +233,7 @@ export class WebSocketService {
    *
    * @async
    */
-  public async _handleProtooRequest(peer, request, accept, reject) {
+  public async _handleProtooRequest(peer, request, accept, reject) {    
     switch (request.method) {
       // 001
       // 获取路由的rtp能力
@@ -282,6 +269,7 @@ export class WebSocketService {
 
         let mediasoupTransport: WebRtcTransportData
         try {
+          // producer、consumer服务会分别创建 transport
           if (producing && !consuming) {
             mediasoupTransport = await this.transportService.createProducerTransport(data);
           } else if (!producing && consuming) {
@@ -577,7 +565,7 @@ export class WebSocketService {
 
         break;
       }
-      // 010
+      // 010 关闭 摄像头 / 唛
       case 'closeProducer': {
         // Ensure the Peer is joined.
         if (!peer.data.joined) {
@@ -595,13 +583,11 @@ export class WebSocketService {
 
         // 关闭生产者
         const res = await this.producerService.closeProducer({ producerId })
-
         // Remove from its map.
-        peer.data.producers.delete(producer.id) // 删除
+        peer.data.producers.delete(producer.id);
 
         // 通知 consumer 服务关闭consumer
-        const resu = await this.consumerService.closeConsumer({ producerId })
-        console.log('resu: ============', resu);
+        await this.consumerService.closeConsumer({ producerId })
 
         accept()
         break;
@@ -670,7 +656,7 @@ export class WebSocketService {
         }
 
         // 恢复消费者
-        const res = await this.consumerService.resume({ consumerId })
+        await this.consumerService.resume({ consumerId })
 
         accept()
 
@@ -693,7 +679,7 @@ export class WebSocketService {
         }
 
         // 暂停生产者
-        const res = await this.consumerService.pause({ consumerId })
+        await this.consumerService.pause({ consumerId })
 
         accept()
 
@@ -803,6 +789,22 @@ export class WebSocketService {
 
         break
       }
+      case 'getTransportStats': { 
+        const { transportId } = request.data
+        const transport = peer.data.transports.get(transportId)
+
+        if (!transport) {
+          this.logger.error(`transport with id "${transportId}" not found`)
+          return;
+        }
+
+        const stats = await this.transportService.getStats({ transportId })
+        // console.log("%c Line:817 🥝 getTransportStats stats", "color:#f5ce50", stats);
+
+        accept(stats)
+
+        break;
+      }
       // 020
       case 'getProducerStats': {
         const { producerId } = request.data
@@ -882,7 +884,7 @@ export class WebSocketService {
           }
 
           // 暂停生产者
-          const res = await this.consumerService.pause({ consumerId })
+          await this.consumerService.pause({ consumerId })
           
           accept()
         }
@@ -906,7 +908,7 @@ export class WebSocketService {
           }
 
           // 恢复消费者
-          const res = await this.consumerService.resume({ consumerId })
+          await this.consumerService.resume({ consumerId })
           
           accept()
         }
@@ -1134,15 +1136,26 @@ export class WebSocketService {
   /********************* 新内容 *********************/
   /**
    * 事件监听回推 notify 消息
+   * 注：无需遍历，无需区分method
    */
   public async notifyMain(data) {
     try {
       const { method, params, peerId } = data;
       const peer = WebSocketService._protooRoom?.getPeer(peerId);
       if (!peer) return;
-
+      
+      // 发送通知
       await peer?.notify(method, params);
 
+      // 删除缓存
+      switch (method) { 
+        case 'consumerClosed':
+          peer?.data.consumers.delete(params.consumerId)
+          break;
+        case 'dataConsumerClosed':
+          peer?.data.dataConsumers.delete(params.dataConsumerId)
+          break;
+      }
     } catch (error) {
       this.logger.error(error)
     }
@@ -1158,7 +1171,6 @@ export class WebSocketService {
 
     switch (method) {
       case 'transportclose':
-      case 'producerclose':
         peer?.data.consumers.delete(params.consumerId)
         break;
     }
@@ -1175,7 +1187,7 @@ export class WebSocketService {
     switch (type) {
       case 'transportclose':
       case 'dataproducerclose':
-        peer?.data.consumers.delete(params.dataConsumerId)
+        peer?.data.dataConsumers.delete(params.dataConsumerId)
         break;
     }
   }
@@ -1185,6 +1197,6 @@ export class WebSocketService {
   }
 
   get mediaRouter() {
-    return this._mediaRouter;
+    return WebSocketService._mediaRouter;
   }
 }

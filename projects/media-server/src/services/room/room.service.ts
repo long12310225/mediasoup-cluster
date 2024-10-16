@@ -275,7 +275,7 @@ export class RoomService {
     try {
       // 根据 roomId 查询房间
       const room = await this.getRoom(data);
-      console.log("%c Line:268 🍡 close room", "color:#7f2b82", room);
+      this.logger.info('根据 roomId 删除房间 ------------')
 
       if (!room) return
       

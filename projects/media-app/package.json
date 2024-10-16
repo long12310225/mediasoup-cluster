@@ -8,7 +8,8 @@
   "main": "lib/index.jsx",
   "scripts": {
     "lint": "eslint -c .eslintrc.js --ext .js,.jsx gulpfile.js lib",
-    "start": "gulp live"
+    "start": "gulp live",
+    "fat": "cross-env DOMAIN='10.2.30.20' gulp live"
   },
   "dependencies": {
     "@babel/runtime": "^7.8.4",
@@ -51,6 +52,7 @@
     "babelify": "^10.0.0",
     "browser-sync": "^2.26.7",
     "browserify": "^16.5.0",
+    "cross-env": "^7.0.3",
     "del": "^5.1.0",
     "envify": "^4.1.0",
     "eslint": "^6.8.0",

@@ -16,7 +16,9 @@ import { MediaRouter } from '../router/media.router.do';
 import { Peer } from '../peer/peer.do';
 import { v4 as uuidv4 } from 'uuid';
 
-@Entity()
+@Entity({
+  comment: 'room表'
+})
 export class MediaRoom extends BaseEntity {
   @PrimaryColumn({
     type: 'varchar',
@@ -36,19 +38,22 @@ export class MediaRoom extends BaseEntity {
     type: 'varchar',
     name: 'room_id',
     nullable: false,
+    comment: 'room 真实 id'
   })
   roomId!: string;
 
   // 关联的是 producer 服务的 routerId
   @Column({
     type: 'varchar',
-    name: 'router_id'
+    name: 'router_id',
+    comment: 'router id'
   })
   routerId!: string;
 
   @Column({
     type: 'varchar',
-    name: 'worker_id'
+    name: 'worker_id',
+    comment: 'worker id'
   })
   workerId!: string;
   // 存在 ManyToOne 时，获取当前对象，会包含该对象的数组
@@ -62,12 +67,14 @@ export class MediaRoom extends BaseEntity {
 
   @Column({
     type: 'text',
-    nullable: true
+    nullable: true,
+    comment: 'metadata'
   })
   metadata?: string;
 
   @CreateDateColumn({
-    name: 'create_date'
+    name: 'create_date',
+    comment: '创建时间'
   })
   createDate!: Date;
   

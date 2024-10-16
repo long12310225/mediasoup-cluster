@@ -55,6 +55,7 @@ export class ProducerService {
       producer.id = result.id;
       producer.kind = data.kind;
       producer.transportId = transport.id;
+      producer.peerId = data.peerId
 
       // 保存入库
       await MediaProducer.getRepository().save(producer);
@@ -193,7 +194,7 @@ export class ProducerService {
       data: {
         producerId: data.producerId
       }
-    });
+    }); 
     if (res) {
       // 移除数据库数据
       await this.deleteProducer({
@@ -215,7 +216,6 @@ export class ProducerService {
       const res = await MediaProducer.getRepository().delete({
         id: data.producerId
       });
-      console.log("%c Line:218 🌭 删除数据库 producer res", "color:#42b983", res);
       if (res?.affected) {
         return {
           msg: '删除成功'

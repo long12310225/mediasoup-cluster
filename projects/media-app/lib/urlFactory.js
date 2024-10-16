@@ -1,3 +1,5 @@
+const config = require('../config');
+
 let protooPort = 4443;
 
 if (window.location.hostname === 'test.mediasoup.org')
@@ -5,7 +7,7 @@ if (window.location.hostname === 'test.mediasoup.org')
 
 export function getProtooUrl({ roomId, peerId })
 {
-	const hostname = '10.2.30.20';
+	const hostname = config.domain;
 
 	return `wss://${hostname}:${protooPort}/?roomId=${roomId}&peerId=${peerId}`;
 }

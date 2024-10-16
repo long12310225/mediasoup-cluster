@@ -10,7 +10,9 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 // import { MediaWorker } from '@/dao/worker/media.worker.do';
 
-@Entity()
+@Entity({
+  comment: 'verve表'
+})
 export class Serve extends BaseEntity {
   @PrimaryColumn({
     type: 'varchar',

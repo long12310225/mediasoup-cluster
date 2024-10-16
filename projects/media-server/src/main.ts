@@ -46,6 +46,7 @@ class Boot {
     if (process.env.NODE_ENV !== 'dev' && env.getEnv('SERVER_TYPE')) {
       module = CONSTANTS.MAIN === env.getEnv('SERVER_TYPE') ? MainModule : SlaveModule;
     } else {
+      console.log(`${chalk.bgGreenBright(`运行本地环境`)}`)
       module = this.port == env.getEnv('SERVER_PORT_MAIN') ? MainModule : SlaveModule;
     }
     
@@ -98,7 +99,7 @@ class Boot {
    * 初始化提示
    */
   private initRunningTips(app): string {
-    let runningTips = `${chalk.yellowBright(`App running at: 
+    let runningTips = `${chalk.bgBlueBright(`App running at: 
       - Network: https://${env.getEnv('SERVER_IP')}:${this.port}/`)}`;
 
     return runningTips;

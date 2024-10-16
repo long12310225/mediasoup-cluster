@@ -10,7 +10,9 @@ import {
 import { MediaRouter } from '../router/media.router.do';
 import { MediaRoom } from '../room/media.room.do';
 
-@Entity()
+@Entity({
+  comment: 'peer表'
+})
 export class Peer extends BaseEntity {
   @PrimaryColumn({
     type: 'varchar',
@@ -24,6 +26,7 @@ export class Peer extends BaseEntity {
     type: 'varchar',
     length: 36,
     name: 'router_id',
+    comment: 'router id'
   })
   routerId!: string;
   @ManyToOne(() => MediaRouter, (mediaRouter) => mediaRouter.peers, {
@@ -50,6 +53,7 @@ export class Peer extends BaseEntity {
 
   @CreateDateColumn({
     name: 'create_date',
+    comment: '创建时间'
   })
   createDate!: Date;
 }

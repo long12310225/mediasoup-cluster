@@ -84,8 +84,23 @@ export class MediaWebRTCTransportController {
    * @param data 
    */
   @Delete('/producer_transports/:transportId')
-  ProducerClose(@Params() data) {
+  producerClose(@Params() data) {
     this.mediasoupProducerWebRTCTransport.close(data)
   }
+  
+  /**
+   * 获取 producer transport stats
+   */
+  @Post('/producer_transports/:transportId/getStats')
+  getProducerTransportStats(@Params() data) {
+    return this.mediasoupProducerWebRTCTransport.getStats(data);
+  }
 
+  /**
+   * 获取 consumer transport stats
+   */
+  @Post('/consumer_transports/:transportId/getStats')
+  getConsumerTransportStats(@Params() data) {
+    return this.mediasoupConsumerWebRTCTransport.getStats(data);
+  }
 }

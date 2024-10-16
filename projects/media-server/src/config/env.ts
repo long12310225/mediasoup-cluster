@@ -17,7 +17,7 @@ class Env {
   localEnvConfig = {};
 
   constructor() {
-    console.log(chalk.yellow(`${Env.TAG}: 开始载入${process.env.NODE_ENV}环境变量配置，准备验证...`));
+    console.log(chalk.bgBlueBright(`${Env.TAG}: 开始载入 ${process.env.NODE_ENV} 环境变量配置, 开始验证...`));
     if (!ENVS.includes(Env.envPath)) {
       const msg = chalk.red(
         `${
@@ -64,13 +64,13 @@ class Env {
     });
     const errors = validateSync(localEnvObject);
     if (errors.length > 0) {
-      console.log(chalk.red(`${Env.TAG}: 验证失败，请检查环境变量配置\n`));
+      console.log(chalk.red(`${Env.TAG}: 环境验证失败，请检查环境变量配置\n`));
       const errorsObj = chalk.red(JSON.stringify(this.buildError(errors)));
       console.log(errorsObj);
       const msg = chalk.red(`${Env.TAG}: 本地环境变量配置有误\n`);
       throw new Error(msg);
     } else {
-      console.log(chalk.green(`${Env.TAG}: 验证成功，正在启动服务...\n`));
+      console.log(chalk.bgBlueBright(`${Env.TAG}: 环境验证成功，正在启动服务...\n`));
     }
   }
 
