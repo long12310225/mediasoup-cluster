@@ -180,14 +180,14 @@ export class WebSocketService {
     this.peerService.createPeer({
       peerId,
       routerId,
-      roomId: this._roomId // 真实房间 id
+      roomId // 真实房间 id
     })
     
     // 监听 request 事件（接收 request 类型的消息）
     peer.on('request', (request, accept, reject) => {
       // console.info(chalk.blueBright(`ws 接收 "request" 消息 [method: ${request.method}, peerId: ${peer.id}]`));
 
-      this._handleProtooRequest(peer, request, accept, reject).catch(
+      this._handleProtooRequest({ roomId, peer, request, accept, reject }).catch(
         (error) => {
           this.logger.error(error)
           reject(error);
@@ -202,7 +202,7 @@ export class WebSocketService {
       // 检查退出房间的这个人，是否进入过房间
       if (peer.data.joined) {
         // 通知所有人某人退出房间
-        for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
+        for (const otherPeer of this._getJoinedPeers(roomId, { excludePeer: peer })) {
           otherPeer.notify('peerClosed', {
             peerId: peer.id
           }).catch((error) => { 
@@ -223,8 +223,8 @@ export class WebSocketService {
 
       // 当最后一个人离开房间时才关闭房间
       if (this.roomService.getProtooRoom(roomId).peers.length === 0) {
-        console.info('last Peer in the room left, closing the room [roomId:%s]', this._roomId)
-        this.close();
+        console.info('last Peer in the room left, closing the room [roomId:%s]', roomId)
+        this.close(roomId);
       }
 
     });
@@ -235,13 +235,13 @@ export class WebSocketService {
    *
    * @async
    */
-  public async _handleProtooRequest(peer, request, accept, reject) {    
+  public async _handleProtooRequest({ roomId, peer, request, accept, reject }) {    
     switch (request.method) {
       // 001
       // 获取路由的rtp能力
       case 'getRouterRtpCapabilities': {
         const mediasoupRouterCapabilities = await this.roomService.getCapabilities({
-          roomId: this._roomId
+          roomId
         });
         accept(mediasoupRouterCapabilities)
         break;
@@ -254,7 +254,7 @@ export class WebSocketService {
         const { forceTcp, producing, consuming, sctpCapabilities } = request.data
         
         const data = {
-          roomId: this._roomId,
+          roomId,
           peerId: peer.id,
           webRtcTransportOptions: {
             enableSctp: Boolean(sctpCapabilities),
@@ -318,7 +318,7 @@ export class WebSocketService {
         // And also create Consumers for existing Producers.
 
         const joinedPeers = [
-          ...this._getJoinedPeers(),
+          ...this._getJoinedPeers(roomId),
           // TODO 【待处理】broadcaster 是 http 调用创建的，缓存在 peer.data 而已，需换址！
           // ...this._broadcasters.values()
         ]
@@ -342,7 +342,7 @@ export class WebSocketService {
 
         // 向其他人发送有新人加入房间的通知
         // Notify the new Peer to all other Peers.
-        const otherPeers = this._getJoinedPeers({ excludePeer: peer })
+        const otherPeers = this._getJoinedPeers(roomId, { excludePeer: peer })
         for (const otherPeer of otherPeers) {
           otherPeer.notify('newPeer', {
             id: peer.id,
@@ -365,6 +365,7 @@ export class WebSocketService {
                 consumerPeer: peer, // 当前 peer 
                 producerPeer: joinedPeer, // 他人的 peer
                 producer, // 他人的 producer
+                roomId
               })
             })
             
@@ -463,12 +464,13 @@ export class WebSocketService {
          * 在 join 时，通知了别人有新用户进入
          * 在这里创建出 producer 之后，遍历除自己以外的所有人，让其他人消费自己的 producer
          */
-        for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
+        for (const otherPeer of this._getJoinedPeers(roomId, { excludePeer: peer })) {
           this.queueCreateConsumer.push(async () => {
             await this._createConsumer({
               consumerPeer: otherPeer, // 他人 peer
               producerPeer: peer, // 当前 peer
               producer: producerData, // 当前 producer
+              roomId
             })
 
           })
@@ -516,7 +518,7 @@ export class WebSocketService {
           case 'chat': {
             // Create a server-side DataConsumer for each Peer.
 
-            for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
+            for (const otherPeer of this._getJoinedPeers(roomId, { excludePeer: peer })) {
               const params = {
                 dataConsumerPeer: otherPeer,
                 dataProducerPeer: peer,
@@ -777,7 +779,7 @@ export class WebSocketService {
         peer.data.displayName = displayName
 
         // Notify other joined Peers.
-        for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
+        for (const otherPeer of this._getJoinedPeers(roomId, { excludePeer: peer })) {
           otherPeer
             .notify('peerDisplayNameChanged', {
               peerId: peer.id,
@@ -938,7 +940,7 @@ export class WebSocketService {
    * 创建一个 mediasoup Consumer
    * Creates a mediasoup Consumer for the given mediasoup Producer.
    */
-  async _createConsumer({ consumerPeer, producerPeer, producer }) {
+  async _createConsumer({ consumerPeer, producerPeer, producer, roomId }) {
     // Optimization:
     // - Create the server-side Consumer in paused mode.
     // - Tell its Peer about it and wait for its response.
@@ -976,7 +978,8 @@ export class WebSocketService {
         transportId: transportData.mediasoupTransport.id,
         producerId: producer.id,
         rtpCapabilities: consumerPeer.data.rtpCapabilities,
-        peerId: consumerPeer.id
+        peerId: consumerPeer.id,
+        roomId
       })
 
       // 将 consumer 服务返回的 consumerData 缓存到 peer.data.consumers
@@ -1092,8 +1095,8 @@ export class WebSocketService {
    * @param { { excludePeer: Peer } } 被排除的 peer
    * @returns JoinedPeers
    */
-  _getJoinedPeers({ excludePeer = { id: ''} } = {}) {
-    return this.roomService.getProtooRoom(this._roomId).peers.filter((peer) => {
+  _getJoinedPeers(roomId, { excludePeer = { id: ''} } = {}) {
+    return this.roomService.getProtooRoom(roomId).peers.filter((peer) => {
       return peer.data.joined && peer.id !== excludePeer.id
     })
   }
@@ -1116,14 +1119,14 @@ export class WebSocketService {
    * 
    * Closes the Room instance by closing the protoo Room and the mediasoup Router.
    */
-  public close() {
+  public close(roomId) {
 
     // Close the protoo Room.
-    this.roomService.getProtooRoom(this._roomId).close();
+    this.roomService.getProtooRoom(roomId).close();
 
     // Close the mediasoup Router.
     this.roomService.close({
-      roomId: this._roomId
+      roomId
     })
 
     // // Close the Bot.
@@ -1142,8 +1145,8 @@ export class WebSocketService {
    */
   public async notifyMain(data) {
     try {
-      const { method, params, peerId } = data;
-      const peer = this.roomService.getProtooRoom(this._roomId)?.getPeer(peerId);
+      const { method, params, peerId, roomId } = data;
+      const peer = this.roomService.getProtooRoom(roomId)?.getPeer(peerId);
       if (!peer) return;
       
       // 发送通知
@@ -1167,8 +1170,8 @@ export class WebSocketService {
    * 操作 peer.data.consumers 合集
    */
   public async peerConsumerHandle(data) {
-    const { method, params, peerId } = data;
-    const peer = this.roomService.getProtooRoom(this._roomId)?.getPeer(peerId);
+    const { method, params, peerId, roomId} = data;
+    const peer = this.roomService.getProtooRoom(roomId)?.getPeer(peerId);
     if (!peer) return;
 
     switch (method) {
@@ -1182,8 +1185,8 @@ export class WebSocketService {
    * 操作 peer.data.dataConsumers 合集
    */
   public async peerDataConsumerHandle(data) {
-    const { type, params, peerId } = data;
-    const peer = this.roomService.getProtooRoom(this._roomId)?.getPeer(peerId);
+    const { type, params, peerId, roomId = '' } = data;
+    const peer = this.roomService.getProtooRoom(roomId)?.getPeer(peerId);
     if (!peer) return;
     
     switch (type) {
@@ -1196,7 +1199,7 @@ export class WebSocketService {
 
   get roomId() {
     return this._roomId
-  }
+  }  
 
   get mediaRouter() {
     return WebSocketService._mediaRouter;

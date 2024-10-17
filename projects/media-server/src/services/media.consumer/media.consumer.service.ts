@@ -78,7 +78,7 @@ export class MediaConsumerService {
     // console.log("%c Line:373 🥥 5 创建 consumer -- create MediaConsumerService.consumers: ", "color:#f5ce50", MediaConsumerService.consumers);
      
     if (data?.peerId) {
-      this.handleConsumer(consumer, data?.peerId);
+      this.handleConsumer(consumer, data.peerId, data.roomId);
     } else if(data?.broadcasterId) {
       this.handleBroadcastConsumer(consumer, data?.broadcasterId)
     }
@@ -99,7 +99,7 @@ export class MediaConsumerService {
    * @param consumer 
    * @param peerId 这个 peerId 是创建时的 peerId
    */
-  handleConsumer(consumer, peerId) {
+  handleConsumer(consumer, peerId, roomId) {
     consumer.on('transportclose', () => {
       // 发起 http 请求，向主应用传递事件
       this.axiosService.fetchApiMaster({
@@ -110,7 +110,8 @@ export class MediaConsumerService {
           params: {
             consumerId: consumer.id
           },
-          peerId
+          peerId,
+          roomId
         }
       });
     })
@@ -128,7 +129,8 @@ export class MediaConsumerService {
           params: {
             consumerId: consumer.id
           },
-          peerId
+          peerId,
+          roomId
         },
       });
     });
@@ -143,7 +145,9 @@ export class MediaConsumerService {
           params: {
             consumerId: consumer.id
           },
-          peerId
+          peerId,
+          roomId
+
         },
       });
     })
@@ -158,7 +162,8 @@ export class MediaConsumerService {
           params: {
             consumerId: consumer.id
           },
-          peerId
+          peerId,
+          roomId
         },
       });
     })
@@ -173,7 +178,8 @@ export class MediaConsumerService {
             consumerId: consumer.id,
             score
           },
-          peerId
+          peerId,
+          roomId
         },
       });
     });

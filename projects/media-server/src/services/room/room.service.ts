@@ -153,7 +153,7 @@ export class RoomService {
    * @param { { id: string } } data
    * @returns 
    */
-  public async get(data: { id: string }) {
+  public async get(data: { id: string }): Promise<MediaRoom> {
     // 从数据库中查询房间
     const roomData: MediaRoom = await MediaRoom.getRepository().findOne({
       relations: { worker: true },

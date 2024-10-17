@@ -23,6 +23,9 @@ export class CreateConsumerDo {
   peerId?: string;
 
   @IsString()
+  roomId?: string;
+
+  @IsString()
   broadcasterId?: string;
 }
 

@@ -7,6 +7,7 @@ import { MediaConsumer } from '@/dao/consumer/media.consumer.do';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 import { CreateConsumerDo, ConsumerDo } from '@/dto';
 import { AxiosService } from '@/shared/modules/axios';
+import { RoomService } from '@/services/room/room.service';
 
 @Injectable()
 export class ConsumerService {
@@ -14,6 +15,7 @@ export class ConsumerService {
     @InjectPinoLogger(ConsumerService.name)
     private readonly logger: PinoLogger,
     private readonly transportService: TransportService,
+    private readonly roomService: RoomService,
     private readonly routerService: RouterService,
     private readonly axiosService: AxiosService
   ) { }
@@ -86,6 +88,7 @@ export class ConsumerService {
     transportId: string;
     producerId: string;
     rtpCapabilities: any;
+    roomId: string;
     peerId?: string;
     broadcasterId?: string;
   }): Promise<
@@ -123,9 +126,9 @@ export class ConsumerService {
         producerId: data.producerId,
         rtpCapabilities: data.rtpCapabilities,
         peerId: data?.peerId,
-        broadcasterId: data?.broadcasterId
+        broadcasterId: data?.broadcasterId,
+        roomId: data.roomId
       }
-      // console.log("%c consumer.service.ts createConsumer() 🍩 执行接口 /consumers/:transportId/consumer params:", params);
       /**
        * 上面创建 pipeTransport 准备就绪后，向 consumer 服务发起请求，通知 consumer 服务进行消费
        */
@@ -137,7 +140,6 @@ export class ConsumerService {
         method: 'POST',
         data: params,
       });
-      // console.log("2 consumer.service.ts createConsumer()接口 /consumers/:transportId/consumer: 结果consumer=", result);
       
       if(!result) return
 
@@ -407,15 +409,17 @@ export class ConsumerService {
     const transport = await this.transportService.get({
       transportId: data.transportId,
     });
-    // console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer transport", "color:#f5ce50", transport);
     
     if (transport?.type === CONSTANTS.PRODUCER) {
+      const roomData = await this.roomService.get({ id: transport.roomId })
+
       const params = {
         transportId: transport.id,
         routerId: transport.routerId,
         producerId: data.producerId,
         rtpCapabilities: data.rtpCapabilities,
-        broadcasterId: data?.broadcasterId
+        broadcasterId: data?.broadcasterId,
+        roomId: roomData.roomId
       }
       // 发起 http，创建 mediasoup consumer
       const result = await this.axiosService.fetchApi({
@@ -425,7 +429,6 @@ export class ConsumerService {
         method: 'POST',
         data: params,
       });
-      // console.log("%c Line:373 🥥 5 创建 consumer -- createBroadcasterConsumer result", "color:#f5ce50", result);
       
       if(!result) return
 

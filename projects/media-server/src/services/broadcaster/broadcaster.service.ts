@@ -7,6 +7,7 @@ import { ProducerService } from "../producer/producer.service";
 import { ConsumerService } from "../consumer/consumer.service";
 import { DataConsumerService } from "../dataConsumer/dataConsumer.service";
 import { DataProducerService } from "../dataProducer/dataProducer.service";
+import { RoomService } from '@/services/room/room.service';
 import { WebRtcTransportData } from '@/types';
 import { CONSTANTS } from '@/common/enum';
 import { PinoLogger } from 'nestjs-pino';
@@ -34,6 +35,7 @@ export class BroadcasterService {
     private readonly consumerService: ConsumerService,
     private readonly dataConsumerService: DataConsumerService,
     private readonly dataProducerService: DataProducerService,
+    private readonly roomService: RoomService,
   ) {
     this.logger.setContext(BroadcasterService.name);
   }
@@ -76,7 +78,7 @@ export class BroadcasterService {
       BroadcasterService._broadcasters.set(broadcaster.id, broadcaster)
   
       // Notify the new Broadcaster to all Peers.
-      for (const otherPeer of this.webSocketService._getJoinedPeers()) {
+      for (const otherPeer of this.webSocketService._getJoinedPeers(this.webSocketService.roomId)) {
         otherPeer.notify('newPeer', {
           id: broadcaster.id,
           displayName: broadcaster.data.displayName,
@@ -88,7 +90,7 @@ export class BroadcasterService {
   
       // Reply with the list of Peers and their Producers.
       const peerInfos = []
-      const joinedPeers = this.webSocketService._getJoinedPeers()
+      const joinedPeers = this.webSocketService._getJoinedPeers(this.webSocketService.roomId)
   
       // Just fill the list of Peers if the Broadcaster provided its rtpCapabilities.
       if (rtpCapabilities) {
@@ -136,7 +138,7 @@ export class BroadcasterService {
 
     BroadcasterService._broadcasters.delete(broadcasterId)
 
-    for (const peer of this.webSocketService._getJoinedPeers()) {
+    for (const peer of this.webSocketService._getJoinedPeers(this.webSocketService.roomId)) {
       peer.notify('peerClosed', {
         peerId: broadcasterId
       }).catch((e) => { 
@@ -313,7 +315,7 @@ export class BroadcasterService {
       this.logger.error(`transport with id "${transportId}" does not exist`)
       return
     }
-    
+
     // const producer = await transport.produce({ kind, rtpParameters })
     const producer = await this.producerService.create({
       transportId,
@@ -324,12 +326,15 @@ export class BroadcasterService {
     // Store it.
     broadcaster.data.producers.set(producer.id, producer)
 
+    const roomData = await this.roomService.get({ id: transport.roomId })
+
     // Optimization: Create a server-side Consumer for each Peer.
-    for (const peer of this.webSocketService._getJoinedPeers()) {
+    for (const peer of this.webSocketService._getJoinedPeers(roomData.roomId)) {
       this.webSocketService._createConsumer({
         consumerPeer: peer,
         producerPeer: broadcaster,
         producer,
+        roomId: roomData.roomId
       })
     }
 

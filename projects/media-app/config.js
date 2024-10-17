@@ -10,6 +10,8 @@
 
 const os = require('os')
 
+console.log("%c Line:13 🍖", "color:#fca650", process.env.DOMAIN);
+
 module.exports = {
   // Listening hostname (just for `gulp live` task).
   domain: process.env.DOMAIN || '10.2.110.222',
